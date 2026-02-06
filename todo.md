@@ -9,8 +9,9 @@ Implement logic for captcha cookie.
 
 ## Improvement tasks
 
-### 1. Audit and reduce installed packages
-The `package-lock.json` is ~3000 lines of resolved transitive dependencies. Review whether all direct dependencies are still needed (e.g. `tsx` is a runtime dev tool bundled as a production dependency). Move dev-only packages out of `dependencies`, run `npm prune`, and consider lighter alternatives where possible to shrink the dependency tree.
+### ~~1. Audit and reduce installed packages~~
+~~The `package-lock.json` is ~3000 lines of resolved transitive dependencies. Review whether all direct dependencies are still needed (e.g. `tsx` is a runtime dev tool bundled as a production dependency). Move dev-only packages out of `dependencies`, run `npm prune`, and consider lighter alternatives where possible to shrink the dependency tree.~~
+Done — moved `tsx` from `dependencies` to `devDependencies` (it is only used as a CLI tool in the `dev:server` script, not imported in source code). Remaining dependencies (`express`) are correctly classified. All checks pass (typecheck, tests, build).
 
 ### ~~2. Expand test coverage~~ Done
 Test coverage expanded from 2 files / 46 LOC to 5 files / 46 passing tests covering:
