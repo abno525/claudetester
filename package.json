@@ -1,0 +1,50 @@
+{
+  "name": "minecraft-captcha",
+  "version": "1.0.0",
+  "description": "A Minecraft crafting table CAPTCHA widget — embeddable, reusable, and framework-agnostic",
+  "type": "module",
+  "main": "dist/server/index.js",
+  "exports": {
+    "./widget": {
+      "import": "./dist/widget/minecraft-captcha.js",
+      "types": "./dist/widget/index.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server/index.js",
+      "types": "./dist/server/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev:widget": "vite",
+    "dev:server": "tsx watch src/server/index.ts",
+    "build:widget": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build": "npm run build:widget && npm run build:server",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "captcha",
+    "minecraft",
+    "crafting",
+    "widget",
+    "security"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "express": "^5.0.0",
+    "tsx": "^4.0.0"
+  }
+}
