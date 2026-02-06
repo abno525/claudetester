@@ -6,6 +6,21 @@ import { consumeChallenge } from "./challenge.js";
 /** Secret used to sign captcha cookies. Override via CAPTCHA_SECRET env var. */
 const SECRET = process.env.CAPTCHA_SECRET ?? crypto.randomBytes(32).toString("hex");
 
+if (!process.env.CAPTCHA_SECRET) {
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "CAPTCHA_SECRET is not set. In production this means cookies will be " +
+        "invalidated on every server restart. Set CAPTCHA_SECRET to a stable value.",
+    );
+    process.exit(1);
+  } else {
+    console.warn(
+      "CAPTCHA_SECRET is not set — using a random value. " +
+        "Cookies will not survive server restarts.",
+    );
+  }
+}
+
 /** Cookie name for the captcha token */
 export const COOKIE_NAME = "mc_captcha";
 
