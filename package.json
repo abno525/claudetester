@@ -1,17 +1,51 @@
 {
   "name": "minecraft-captcha",
-  "version": "0.1.0",
-  "description": "Minecraft crafting table CAPTCHA widget",
-  "main": "dist/minecraft-captcha.js",
+  "version": "1.0.0",
+  "description": "A Minecraft crafting table CAPTCHA widget — embeddable, reusable, and framework-agnostic",
+  "type": "module",
+  "main": "dist/server/index.js",
+  "exports": {
+    "./widget": {
+      "import": "./dist/widget/minecraft-captcha.js",
+      "types": "./dist/widget/index.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server/index.js",
+      "types": "./dist/server/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "esbuild src/client/index.ts --bundle --minify --outfile=dist/minecraft-captcha.js --format=iife --global-name=MinecraftCaptcha --target=es2020",
-    "build:dev": "esbuild src/client/index.ts --bundle --outfile=dist/minecraft-captcha.js --format=iife --global-name=MinecraftCaptcha --target=es2020 --sourcemap",
-    "watch": "esbuild src/client/index.ts --bundle --outfile=dist/minecraft-captcha.js --format=iife --global-name=MinecraftCaptcha --target=es2020 --sourcemap --watch",
-    "typecheck": "tsc --noEmit"
+    "dev:widget": "vite",
+    "dev:server": "tsx watch src/server/index.ts",
+    "build:widget": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build": "npm run build:widget && npm run build:server",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
+  "keywords": [
+    "captcha",
+    "minecraft",
+    "crafting",
+    "widget",
+    "security"
+  ],
+  "license": "MIT",
   "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
     "esbuild": "^0.20.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
   },
-  "license": "MIT"
+  "dependencies": {
+    "express": "^5.0.0",
+    "tsx": "^4.0.0"
+  }
 }
