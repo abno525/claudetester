@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft CAPTCHA Demo</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+      min-height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      margin-bottom: 8px;
+    }
+    p {
+      color: #aaa;
+      margin-bottom: 24px;
+    }
+    .demo-form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .controls button {
+      font-family: monospace;
+      padding: 8px 16px;
+      cursor: pointer;
+      background: #333;
+      color: #eee;
+      border: 1px solid #555;
+    }
+    .controls button:hover {
+      background: #444;
+    }
+    #result {
+      margin-top: 16px;
+      padding: 12px;
+      background: #222;
+      border-radius: 4px;
+      min-width: 300px;
+      text-align: center;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Minecraft CAPTCHA</h1>
+  <p>Drag materials onto the crafting grid to craft the requested item.</p>
+
+  <form class="demo-form" action="#" method="POST">
+    <div id="mc-captcha"></div>
+    <button type="submit">Submit Form</button>
+  </form>
+
+  <div class="controls">
+    <button onclick="switchTheme('classic')">Classic Theme</button>
+    <button onclick="switchTheme('dark')">Dark Theme</button>
+    <button onclick="resetCaptcha()">New Challenge</button>
+  </div>
+
+  <div id="result"></div>
+
+  <!--
+    Mock API: intercepts fetch calls to /api/* so the demo works
+    without a backend server.
+  -->
+  <script>
+    // ── Mock Server ──────────────────────────────
+    const MOCK_RECIPES = [
+      {
+        id: "wooden_pickaxe",
+        targetItem: "wooden_pickaxe",
+        targetItemLabel: "Wooden Pickaxe",
+        type: "shaped",
+        pattern: [
+          ["plank", "plank", "plank"],
+          [null, "stick", null],
+          [null, "stick", null]
+        ],
+        materials: [
+          { id: "plank", label: "Plank", count: 3 },
+          { id: "stick", label: "Stick", count: 2 }
+        ],
+        difficulty: "easy"
+      },
+      {
+        id: "wooden_sword",
+        targetItem: "wooden_sword",
+        targetItemLabel: "Wooden Sword",
+        type: "shaped",
+        pattern: [
+          [null, "plank", null],
+          [null, "plank", null],
+          [null, "stick", null]
+        ],
+        materials: [
+          { id: "plank", label: "Plank", count: 2 },
+          { id: "stick", label: "Stick", count: 1 },
+          { id: "cobblestone", label: "Cobblestone", count: 2 }
+        ],
+        difficulty: "easy"
+      },
+      {
+        id: "crafting_table",
+        targetItem: "crafting_table",
+        targetItemLabel: "Crafting Table",
+        type: "shaped",
+        pattern: [
+          ["plank", "plank", null],
+          ["plank", "plank", null],
+          [null, null, null]
+        ],
+        materials: [
+          { id: "plank", label: "Plank", count: 4 },
+          { id: "stick", label: "Stick", count: 2 }
+        ],
+        difficulty: "easy"
+      },
+      {
+        id: "furnace",
+        targetItem: "furnace",
+        targetItemLabel: "Furnace",
+        type: "shaped",
+        pattern: [
+          ["cobblestone", "cobblestone", "cobblestone"],
+          ["cobblestone", null, "cobblestone"],
+          ["cobblestone", "cobblestone", "cobblestone"]
+        ],
+        materials: [
+          { id: "cobblestone", label: "Cobblestone", count: 8 },
+          { id: "plank", label: "Plank", count: 1 }
+        ],
+        difficulty: "medium"
+      },
+      {
+        id: "chest",
+        targetItem: "chest",
+        targetItemLabel: "Chest",
+        type: "shaped",
+        pattern: [
+          ["plank", "plank", "plank"],
+          ["plank", null, "plank"],
+          ["plank", "plank", "plank"]
+        ],
+        materials: [
+          { id: "plank", label: "Plank", count: 8 },
+          { id: "stick", label: "Stick", count: 1 }
+        ],
+        difficulty: "medium"
+      },
+      {
+        id: "iron_helmet",
+        targetItem: "iron_helmet",
+        targetItemLabel: "Iron Helmet",
+        type: "shaped",
+        pattern: [
+          ["iron_ingot", "iron_ingot", "iron_ingot"],
+          ["iron_ingot", null, "iron_ingot"],
+          [null, null, null]
+        ],
+        materials: [
+          { id: "iron_ingot", label: "Iron Ingot", count: 5 },
+          { id: "gold_ingot", label: "Gold Ingot", count: 2 }
+        ],
+        difficulty: "medium"
+      },
+      {
+        id: "stone_pickaxe",
+        targetItem: "stone_pickaxe",
+        targetItemLabel: "Stone Pickaxe",
+        type: "shaped",
+        pattern: [
+          ["cobblestone", "cobblestone", "cobblestone"],
+          [null, "stick", null],
+          [null, "stick", null]
+        ],
+        materials: [
+          { id: "cobblestone", label: "Cobblestone", count: 3 },
+          { id: "stick", label: "Stick", count: 2 },
+          { id: "plank", label: "Plank", count: 1 }
+        ],
+        difficulty: "easy"
+      }
+    ];
+
+    let activeChallenge = null;
+    let retriesRemaining = 3;
+
+    function matchesPattern(grid, pattern) {
+      // Try all valid offsets for the pattern
+      // First, find the bounding box of the pattern
+      let minR = 3, maxR = -1, minC = 3, maxC = -1;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          if (pattern[r][c] !== null) {
+            minR = Math.min(minR, r);
+            maxR = Math.max(maxR, r);
+            minC = Math.min(minC, c);
+            maxC = Math.max(maxC, c);
+          }
+        }
+      }
+      const patH = maxR - minR + 1;
+      const patW = maxC - minC + 1;
+
+      // Try every offset where the pattern could fit
+      for (let offR = 0; offR <= 3 - patH; offR++) {
+        for (let offC = 0; offC <= 3 - patW; offC++) {
+          let match = true;
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+              const patR = r - offR + minR;
+              const patC = c - offC + minC;
+              let expected = null;
+              if (patR >= minR && patR <= maxR && patC >= minC && patC <= maxC) {
+                expected = pattern[patR][patC];
+              }
+              const actual = grid[r]?.[c] ?? null;
+              if (expected !== actual) {
+                match = false;
+                break;
+              }
+            }
+            if (!match) break;
+          }
+          if (match) return true;
+        }
+      }
+      return false;
+    }
+
+    const _origFetch = window.fetch;
+    window.fetch = async function(url, opts) {
+      const urlStr = typeof url === 'string' ? url : url.toString();
+
+      if (urlStr.includes('/api/challenge')) {
+        const recipe = MOCK_RECIPES[Math.floor(Math.random() * MOCK_RECIPES.length)];
+        activeChallenge = recipe;
+        retriesRemaining = 3;
+        return new Response(JSON.stringify({
+          challengeId: "ch_mock_" + Date.now(),
+          targetItem: recipe.targetItem,
+          targetItemLabel: recipe.targetItemLabel,
+          materials: recipe.materials,
+          gridSize: 3,
+          expiresAt: new Date(Date.now() + 300000).toISOString()
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (urlStr.includes('/api/verify')) {
+        const body = JSON.parse(opts?.body || '{}');
+        if (!activeChallenge) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "challenge_not_found"
+          }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
+        const correct = matchesPattern(body.grid, activeChallenge.pattern);
+        if (correct) {
+          const token = "mock_token_" + Date.now();
+          activeChallenge = null;
+          return new Response(JSON.stringify({
+            success: true,
+            token: token
+          }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        } else {
+          retriesRemaining--;
+          return new Response(JSON.stringify({
+            success: false,
+            error: "incorrect_recipe",
+            retriesRemaining: Math.max(0, retriesRemaining)
+          }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+      }
+
+      return _origFetch.apply(this, arguments);
+    };
+  </script>
+
+  <!-- Load the built widget -->
+  <script src="dist/minecraft-captcha.js"></script>
+  <script>
+    let currentTheme = 'classic';
+
+    function startCaptcha(theme) {
+      MinecraftCaptcha.init({
+        container: '#mc-captcha',
+        siteKey: 'demo-site-key',
+        difficulty: 'medium',
+        theme: theme || currentTheme,
+        onSuccess: function(token) {
+          const result = document.getElementById('result');
+          result.style.display = 'block';
+          result.style.color = '#3baa35';
+          result.textContent = 'CAPTCHA passed! Token: ' + token.slice(0, 24) + '...';
+        },
+        onFailure: function() {
+          const result = document.getElementById('result');
+          result.style.display = 'block';
+          result.style.color = '#c41a1a';
+          result.textContent = 'Incorrect. Try again!';
+        },
+        onExpire: function() {
+          const result = document.getElementById('result');
+          result.style.display = 'block';
+          result.style.color = '#f5d442';
+          result.textContent = 'Challenge expired.';
+        }
+      });
+    }
+
+    function switchTheme(theme) {
+      currentTheme = theme;
+      startCaptcha(theme);
+    }
+
+    function resetCaptcha() {
+      startCaptcha();
+    }
+
+    // Auto-start
+    startCaptcha();
+  </script>
+</body>
+</html>

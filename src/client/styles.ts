@@ -1,0 +1,355 @@
+/**
+ * Injects the widget CSS into the document head.
+ * Uses a data-attribute to avoid injecting twice.
+ */
+export function injectStyles(): void {
+  if (document.querySelector("style[data-mc-captcha]")) return;
+
+  const style = document.createElement("style");
+  style.setAttribute("data-mc-captcha", "");
+  style.textContent = CSS;
+  document.head.appendChild(style);
+}
+
+const CSS = `
+/* ── Container ──────────────────────────────────── */
+
+.mc-captcha {
+  --mc-bg: #c6c6c6;
+  --mc-border-light: #ffffff;
+  --mc-border-dark: #555555;
+  --mc-slot-bg: #8b8b8b;
+  --mc-slot-border-light: #373737;
+  --mc-slot-border-dark: #ffffff;
+  --mc-text: #404040;
+  --mc-title-text: #404040;
+  --mc-arrow: #404040;
+  --mc-success: #3baa35;
+  --mc-failure: #c41a1a;
+
+  font-family: "Courier New", monospace;
+  background: var(--mc-bg);
+  border: 3px solid;
+  border-color: var(--mc-border-light) var(--mc-border-dark) var(--mc-border-dark) var(--mc-border-light);
+  padding: 16px;
+  width: fit-content;
+  min-width: 320px;
+  max-width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  box-sizing: border-box;
+  image-rendering: pixelated;
+  position: relative;
+}
+
+/* ── Dark theme ─────────────────────────────────── */
+
+.mc-captcha.mc-theme-dark {
+  --mc-bg: #2d2d2d;
+  --mc-border-light: #4a4a4a;
+  --mc-border-dark: #1a1a1a;
+  --mc-slot-bg: #3d3d3d;
+  --mc-slot-border-light: #1a1a1a;
+  --mc-slot-border-dark: #5a5a5a;
+  --mc-text: #d0d0d0;
+  --mc-title-text: #e0e0e0;
+  --mc-arrow: #d0d0d0;
+}
+
+/* ── Title bar ──────────────────────────────────── */
+
+.mc-captcha__title {
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--mc-title-text);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.mc-captcha__target {
+  font-weight: bold;
+  color: var(--mc-text);
+}
+
+/* ── Crafting area (grid + arrow + output) ──────── */
+
+.mc-captcha__crafting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* ── 3x3 Grid ───────────────────────────────────── */
+
+.mc-captcha__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 48px);
+  grid-template-rows: repeat(3, 48px);
+  gap: 2px;
+}
+
+/* ── Grid slot ──────────────────────────────────── */
+
+.mc-captcha__slot {
+  width: 48px;
+  height: 48px;
+  background: var(--mc-slot-bg);
+  border: 2px solid;
+  border-color: var(--mc-slot-border-light) var(--mc-slot-border-dark) var(--mc-slot-border-dark) var(--mc-slot-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.mc-captcha__slot:focus {
+  outline: 2px solid #5c9ede;
+  outline-offset: -2px;
+}
+
+.mc-captcha__slot.mc-drag-over {
+  background: #6b8b6b;
+}
+
+/* ── Arrow between grid and output ──────────────── */
+
+.mc-captcha__arrow {
+  font-size: 28px;
+  color: var(--mc-arrow);
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Output slot ────────────────────────────────── */
+
+.mc-captcha__output {
+  width: 56px;
+  height: 56px;
+  background: var(--mc-slot-bg);
+  border: 2px solid;
+  border-color: var(--mc-slot-border-light) var(--mc-slot-border-dark) var(--mc-slot-border-dark) var(--mc-slot-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* ── Item rendering (shared by grid, materials, output) ── */
+
+.mc-captcha__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.mc-captcha__item-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.mc-captcha__item-label {
+  font-size: 8px;
+  color: var(--mc-text);
+  text-align: center;
+  line-height: 1.1;
+  margin-top: 2px;
+  max-width: 44px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Materials panel ────────────────────────────── */
+
+.mc-captcha__materials-label {
+  font-size: 11px;
+  color: var(--mc-text);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.mc-captcha__materials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.mc-captcha__material {
+  width: 48px;
+  height: 48px;
+  background: var(--mc-slot-bg);
+  border: 2px solid;
+  border-color: var(--mc-slot-border-light) var(--mc-slot-border-dark) var(--mc-slot-border-dark) var(--mc-slot-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.mc-captcha__material:active {
+  cursor: grabbing;
+}
+
+.mc-captcha__material:focus {
+  outline: 2px solid #5c9ede;
+  outline-offset: -2px;
+}
+
+.mc-captcha__material.mc-disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.mc-captcha__material-count {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #333;
+  pointer-events: none;
+}
+
+/* ── Verify button ──────────────────────────────── */
+
+.mc-captcha__actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mc-captcha__btn {
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--mc-text);
+  background: var(--mc-bg);
+  border: 2px solid;
+  border-color: var(--mc-border-light) var(--mc-border-dark) var(--mc-border-dark) var(--mc-border-light);
+  padding: 6px 18px;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+}
+
+.mc-captcha__btn:hover {
+  background: #d6d6d6;
+}
+
+.mc-captcha__btn:active {
+  border-color: var(--mc-border-dark) var(--mc-border-light) var(--mc-border-light) var(--mc-border-dark);
+}
+
+.mc-captcha__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mc-captcha__btn--clear {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+/* ── Status bar ─────────────────────────────────── */
+
+.mc-captcha__status {
+  text-align: center;
+  font-size: 12px;
+  margin-top: 10px;
+  min-height: 18px;
+  color: var(--mc-text);
+}
+
+.mc-captcha__status--success {
+  color: var(--mc-success);
+  font-weight: bold;
+}
+
+.mc-captcha__status--error {
+  color: var(--mc-failure);
+  font-weight: bold;
+}
+
+/* ── Loading overlay ────────────────────────────── */
+
+.mc-captcha__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--mc-text);
+  font-size: 14px;
+}
+
+/* ── Timer bar ──────────────────────────────────── */
+
+.mc-captcha__timer {
+  height: 3px;
+  background: #5c9ede;
+  margin-top: 8px;
+  transition: width 1s linear;
+}
+
+/* ── Drag ghost ─────────────────────────────────── */
+
+.mc-captcha__drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  opacity: 0.85;
+  transform: translate(-50%, -50%);
+}
+
+/* ── Mobile touch adjustments ───────────────────── */
+
+@media (max-width: 400px) {
+  .mc-captcha__grid {
+    grid-template-columns: repeat(3, 40px);
+    grid-template-rows: repeat(3, 40px);
+  }
+
+  .mc-captcha__slot {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mc-captcha__material {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mc-captcha__output {
+    width: 48px;
+    height: 48px;
+  }
+
+  .mc-captcha__item-icon {
+    font-size: 18px;
+  }
+
+  .mc-captcha {
+    padding: 10px;
+    min-width: 280px;
+  }
+}
+`;
