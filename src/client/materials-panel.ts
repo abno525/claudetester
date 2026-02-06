@@ -1,15 +1,14 @@
-import type { Material } from "../shared/types";
-import { getItemDisplay } from "../shared/items";
+import type { ItemId } from "../shared/types.js";
+import { getItemDisplay } from "../shared/items.js";
 
 /**
  * Renders the available materials the user can drag onto the grid.
- * Tracks remaining counts as items are placed/returned.
+ * Items have unlimited supply — the user places as many as needed.
  */
 export class MaterialsPanel {
   private el: HTMLElement;
-  private remaining: Map<string, number> = new Map();
   private materialEls: Map<string, HTMLElement> = new Map();
-  private materials: Material[] = [];
+  private items: ItemId[] = [];
 
   /** Called when a material is selected (clicked for placement) */
   onMaterialSelected: ((itemId: string) => void) | null = null;
@@ -23,42 +22,10 @@ export class MaterialsPanel {
   }
 
   /** Set the available materials and render them */
-  setMaterials(materials: Material[]): void {
-    this.materials = materials;
-    this.remaining.clear();
+  setItems(items: ItemId[]): void {
+    this.items = items;
     this.materialEls.clear();
-
-    for (const m of materials) {
-      this.remaining.set(m.id, m.count);
-    }
-
     this.render();
-  }
-
-  /** Use one unit of a material. Returns false if none remaining. */
-  consume(itemId: string): boolean {
-    const count = this.remaining.get(itemId) ?? 0;
-    if (count <= 0) return false;
-    this.remaining.set(itemId, count - 1);
-    this.updateMaterialEl(itemId);
-    return true;
-  }
-
-  /** Return one unit of a material to the pool */
-  restore(itemId: string): void {
-    const count = this.remaining.get(itemId) ?? 0;
-    this.remaining.set(itemId, count + 1);
-    this.updateMaterialEl(itemId);
-  }
-
-  /** Get the remaining count for a material */
-  getRemaining(itemId: string): number {
-    return this.remaining.get(itemId) ?? 0;
-  }
-
-  /** Get the material element for drag initiation */
-  getMaterialElement(itemId: string): HTMLElement | undefined {
-    return this.materialEls.get(itemId);
   }
 
   /** Check if an element is a material tile */
@@ -85,27 +52,26 @@ export class MaterialsPanel {
     container.setAttribute("role", "list");
     container.setAttribute("aria-label", "Available materials");
 
-    for (const m of this.materials) {
-      const tile = this.createMaterialTile(m);
-      this.materialEls.set(m.id, tile);
+    for (const itemId of this.items) {
+      const tile = this.createMaterialTile(itemId);
+      this.materialEls.set(itemId, tile);
       container.appendChild(tile);
     }
 
     this.el.appendChild(container);
   }
 
-  private createMaterialTile(material: Material): HTMLElement {
-    const display = getItemDisplay(material.id);
+  private createMaterialTile(itemId: ItemId): HTMLElement {
+    const display = getItemDisplay(itemId);
+    const label = itemId.replace(/_/g, " ");
+
     const tile = document.createElement("div");
     tile.className = "mc-captcha__material";
-    tile.dataset.itemId = material.id;
+    tile.dataset.itemId = itemId;
     tile.setAttribute("role", "listitem");
     tile.setAttribute("tabindex", "0");
     tile.setAttribute("draggable", "true");
-    tile.setAttribute(
-      "aria-label",
-      `${material.label}, ${material.count} available`
-    );
+    tile.setAttribute("aria-label", label);
 
     const item = document.createElement("div");
     item.className = "mc-captcha__item";
@@ -117,22 +83,15 @@ export class MaterialsPanel {
 
     const labelEl = document.createElement("span");
     labelEl.className = "mc-captcha__item-label";
-    labelEl.textContent = material.label;
+    labelEl.textContent = label;
 
     item.appendChild(icon);
     item.appendChild(labelEl);
     tile.appendChild(item);
 
-    const countEl = document.createElement("span");
-    countEl.className = "mc-captcha__material-count";
-    countEl.textContent = String(material.count);
-    tile.appendChild(countEl);
-
     // Click to select for placement
     tile.addEventListener("click", () => {
-      if ((this.remaining.get(material.id) ?? 0) > 0) {
-        this.onMaterialSelected?.(material.id);
-      }
+      this.onMaterialSelected?.(itemId);
     });
 
     tile.addEventListener("keydown", (e) => {
@@ -143,20 +102,5 @@ export class MaterialsPanel {
     });
 
     return tile;
-  }
-
-  private updateMaterialEl(itemId: string): void {
-    const tile = this.materialEls.get(itemId);
-    if (!tile) return;
-
-    const count = this.remaining.get(itemId) ?? 0;
-    const countEl = tile.querySelector(".mc-captcha__material-count");
-    if (countEl) countEl.textContent = String(count);
-
-    tile.classList.toggle("mc-disabled", count <= 0);
-    tile.setAttribute(
-      "aria-label",
-      `${itemId.replace(/_/g, " ")}, ${count} available`
-    );
   }
 }

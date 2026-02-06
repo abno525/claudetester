@@ -1,8 +1,12 @@
-import type { CaptchaOptions, Challenge } from "../shared/types";
-import { getItemDisplay } from "../shared/items";
-import { CaptchaApi, CaptchaApiError } from "./api";
-import { CraftingGridComponent } from "./crafting-grid";
-import { MaterialsPanel } from "./materials-panel";
+import type {
+  CaptchaWidgetOptions,
+  CaptchaChallenge,
+  CaptchaResult,
+} from "../shared/types.js";
+import { getItemDisplay } from "../shared/items.js";
+import { CaptchaApi } from "./api.js";
+import { CraftingGridComponent } from "./crafting-grid.js";
+import { MaterialsPanel } from "./materials-panel.js";
 
 /**
  * Main CAPTCHA widget. Orchestrates the crafting grid, materials panel,
@@ -11,11 +15,8 @@ import { MaterialsPanel } from "./materials-panel";
 export class CaptchaWidget {
   private container: HTMLElement;
   private api: CaptchaApi;
-  private options: Required<
-    Pick<CaptchaOptions, "siteKey" | "difficulty" | "theme" | "timeout">
-  > &
-    CaptchaOptions;
-  private challenge: Challenge | null = null;
+  private theme: string;
+  private challenge: CaptchaChallenge | null = null;
   private grid: CraftingGridComponent | null = null;
   private materials: MaterialsPanel | null = null;
 
@@ -35,17 +36,17 @@ export class CaptchaWidget {
   // Click-to-place state
   private selectedMaterial: string | null = null;
 
-  constructor(container: HTMLElement, options: CaptchaOptions) {
+  private onSuccess?: (result: CaptchaResult) => void;
+  private onFailure?: (result: CaptchaResult) => void;
+  private onExpire?: () => void;
+
+  constructor(container: HTMLElement, options: CaptchaWidgetOptions) {
     this.container = container;
-    this.options = {
-      difficulty: "medium",
-      theme: "classic",
-      timeout: 300,
-      ...options,
-    };
-    this.api = new CaptchaApi(
-      options.apiUrl ?? `${window.location.origin}/api`
-    );
+    this.theme = options.theme ?? "classic";
+    this.api = new CaptchaApi(options.apiUrl ?? "");
+    this.onSuccess = options.onSuccess;
+    this.onFailure = options.onFailure;
+    this.onExpire = options.onExpire;
   }
 
   /** Start the widget: fetch a challenge and render the UI */
@@ -55,7 +56,7 @@ export class CaptchaWidget {
     this.selectedMaterial = null;
 
     this.rootEl = document.createElement("div");
-    this.rootEl.className = `mc-captcha mc-theme-${this.options.theme}`;
+    this.rootEl.className = `mc-captcha mc-theme-${this.theme}`;
 
     // Show loading state
     const loading = document.createElement("div");
@@ -65,16 +66,10 @@ export class CaptchaWidget {
     this.container.appendChild(this.rootEl);
 
     try {
-      this.challenge = await this.api.getChallenge(
-        this.options.siteKey,
-        this.options.difficulty
-      );
+      this.challenge = await this.api.getChallenge();
       this.renderChallenge();
-    } catch (err) {
-      loading.textContent =
-        err instanceof CaptchaApiError
-          ? `Error: ${err.code}`
-          : "Failed to load challenge";
+    } catch {
+      loading.textContent = "Failed to load challenge";
     }
   }
 
@@ -90,15 +85,15 @@ export class CaptchaWidget {
     if (!this.rootEl || !this.challenge) return;
     this.rootEl.innerHTML = "";
 
-    // Title: "Craft: Wooden Pickaxe"
+    // Title / prompt (e.g. "Craft: Wooden Pickaxe")
     const title = document.createElement("div");
     title.className = "mc-captcha__title";
-    title.innerHTML = `Craft: <span class="mc-captcha__target">${this.escapeHtml(this.challenge.targetItemLabel)}</span>`;
+    title.textContent = this.challenge.prompt;
     this.rootEl.appendChild(title);
 
     // Materials panel
     this.materials = new MaterialsPanel();
-    this.materials.setMaterials(this.challenge.materials);
+    this.materials.setItems(this.challenge.availableItems);
     this.materials.onMaterialSelected = (itemId) =>
       this.handleMaterialSelected(itemId);
     this.rootEl.appendChild(this.materials.getElement());
@@ -107,11 +102,16 @@ export class CaptchaWidget {
     const craftingArea = document.createElement("div");
     craftingArea.className = "mc-captcha__crafting";
 
-    this.grid = new CraftingGridComponent(this.challenge.gridSize);
-    this.grid.onItemRemoved = (itemId) => this.materials!.restore(itemId);
+    this.grid = new CraftingGridComponent(3);
+    this.grid.onItemRemoved = () => {}; // Items have unlimited supply
     this.grid.onSlotActivated = (row, col) =>
       this.handleSlotActivated(row, col);
     craftingArea.appendChild(this.grid.getElement());
+
+    // Parse the target item from the prompt (e.g. "Craft: Wooden Pickaxe" → guess item id)
+    const targetLabel = this.challenge.prompt.replace(/^Craft:\s*/i, "");
+    const targetItemId = targetLabel.toLowerCase().replace(/\s+/g, "_");
+    const display = getItemDisplay(targetItemId);
 
     const arrow = document.createElement("div");
     arrow.className = "mc-captcha__arrow";
@@ -121,7 +121,6 @@ export class CaptchaWidget {
 
     const output = document.createElement("div");
     output.className = "mc-captcha__output";
-    const display = getItemDisplay(this.challenge.targetItem);
     const outputItem = document.createElement("div");
     outputItem.className = "mc-captcha__item";
     const outputIcon = document.createElement("span");
@@ -131,7 +130,7 @@ export class CaptchaWidget {
     outputIcon.style.fontSize = "28px";
     const outputLabel = document.createElement("span");
     outputLabel.className = "mc-captcha__item-label";
-    outputLabel.textContent = this.challenge.targetItemLabel;
+    outputLabel.textContent = targetLabel;
     outputItem.appendChild(outputIcon);
     outputItem.appendChild(outputLabel);
     output.appendChild(outputItem);
@@ -175,9 +174,6 @@ export class CaptchaWidget {
 
     // Set up drag-and-drop
     this.setupDragAndDrop();
-
-    // Add hidden input for form integration
-    this.addHiddenInput();
   }
 
   // ── Click-to-place flow ──────────────────────────
@@ -189,12 +185,8 @@ export class CaptchaWidget {
   }
 
   private handleSlotActivated(row: number, col: number): void {
-    if (this.resolved || !this.selectedMaterial || !this.materials || !this.grid)
-      return;
-
-    if (this.materials.consume(this.selectedMaterial)) {
-      this.grid.placeItem(row, col, this.selectedMaterial);
-    }
+    if (this.resolved || !this.selectedMaterial || !this.grid) return;
+    this.grid.placeItem(row, col, this.selectedMaterial);
     this.selectedMaterial = null;
     this.setStatus("");
   }
@@ -203,9 +195,6 @@ export class CaptchaWidget {
 
   private setupDragAndDrop(): void {
     if (!this.rootEl) return;
-
-    // Use native HTML5 drag-and-drop for desktop,
-    // with touch event fallback for mobile.
 
     this.rootEl.addEventListener("dragstart", this.onDragStart);
     this.rootEl.addEventListener("dragover", this.onDragOver);
@@ -244,7 +233,7 @@ export class CaptchaWidget {
     // Dragging from materials panel
     if (this.materials?.isMaterial(target)) {
       const itemId = this.materials.getItemId(target);
-      if (itemId && this.materials.getRemaining(itemId) > 0) {
+      if (itemId) {
         this.dragItemId = itemId;
         this.dragSourceSlot = null;
         e.dataTransfer?.setData("text/plain", itemId);
@@ -296,8 +285,7 @@ export class CaptchaWidget {
 
   private onDrop = (e: DragEvent): void => {
     e.preventDefault();
-    if (!this.dragItemId || this.resolved || !this.grid || !this.materials)
-      return;
+    if (!this.dragItemId || this.resolved || !this.grid) return;
 
     const slotEl = (e.target as HTMLElement).closest(
       ".mc-captcha__slot"
@@ -326,7 +314,7 @@ export class CaptchaWidget {
     // From materials
     if (this.materials?.isMaterial(target)) {
       const itemId = this.materials.getItemId(target);
-      if (itemId && this.materials.getRemaining(itemId) > 0) {
+      if (itemId) {
         e.preventDefault();
         this.dragItemId = itemId;
         this.dragSourceSlot = null;
@@ -359,13 +347,13 @@ export class CaptchaWidget {
     this.ghostEl.style.top = `${touch.clientY}px`;
   };
 
-  private onTouchEnd = (e: TouchEvent): void => {
+  private onTouchEnd = (_e: TouchEvent): void => {
     if (!this.dragItemId || !this.grid) {
       this.hideGhost();
       return;
     }
 
-    const touch = e.changedTouches[0];
+    const touch = _e.changedTouches[0];
     const dropTarget = document.elementFromPoint(
       touch.clientX,
       touch.clientY
@@ -403,34 +391,23 @@ export class CaptchaWidget {
 
   /** Common drop logic shared by HTML5 drag and touch */
   private completeDrop(row: number, col: number): void {
-    if (!this.dragItemId || !this.grid || !this.materials) return;
+    if (!this.dragItemId || !this.grid) return;
 
     if (this.dragSourceSlot) {
       // Moving from one grid slot to another
-      const srcItem = this.grid.removeItem(
-        this.dragSourceSlot.row,
-        this.dragSourceSlot.col
-      );
+      this.grid.removeItem(this.dragSourceSlot.row, this.dragSourceSlot.col);
       const displaced = this.grid.placeItem(row, col, this.dragItemId);
       if (displaced) {
-        // Put the displaced item back in the source slot
-        if (srcItem) {
-          this.grid.placeItem(
-            this.dragSourceSlot.row,
-            this.dragSourceSlot.col,
-            displaced
-          );
-        } else {
-          this.materials.restore(displaced);
-        }
+        // Put the displaced item into the source slot
+        this.grid.placeItem(
+          this.dragSourceSlot.row,
+          this.dragSourceSlot.col,
+          displaced
+        );
       }
     } else {
-      // Dragging from materials to grid
-      const displaced = this.grid.placeItem(row, col, this.dragItemId);
-      this.materials.consume(this.dragItemId);
-      if (displaced) {
-        this.materials.restore(displaced);
-      }
+      // Dragging from materials to grid (unlimited supply)
+      this.grid.placeItem(row, col, this.dragItemId);
     }
   }
 
@@ -443,31 +420,22 @@ export class CaptchaWidget {
     if (this.verifyBtn) this.verifyBtn.disabled = true;
 
     try {
-      const result = await this.api.verify(
-        this.challenge.challengeId,
-        this.grid.getGrid()
-      );
+      const result = await this.api.verify({
+        challengeId: this.challenge.challengeId,
+        grid: this.grid.getGrid(),
+      });
 
-      if (result.success && result.token) {
+      if (result.success) {
         this.resolved = true;
         this.stopTimer();
-        this.setStatus("CAPTCHA passed!", "success");
-        this.setHiddenInput(result.token);
-        this.options.onSuccess?.(result.token);
+        this.setStatus(result.message ?? "CAPTCHA passed!", "success");
+        this.onSuccess?.(result);
       } else {
-        const msg =
-          result.error === "challenge_expired"
-            ? "Challenge expired. Requesting new one..."
-            : result.retriesRemaining != null
-              ? `Incorrect recipe. ${result.retriesRemaining} tries remaining.`
-              : "Incorrect recipe. Try again.";
-        this.setStatus(msg, "error");
-        this.options.onFailure?.();
-
-        if (result.error === "challenge_expired") {
-          this.start();
-        }
-
+        this.setStatus(
+          result.message ?? "Incorrect recipe. Try again.",
+          "error"
+        );
+        this.onFailure?.(result);
         if (this.verifyBtn) this.verifyBtn.disabled = false;
       }
     } catch {
@@ -479,18 +447,7 @@ export class CaptchaWidget {
   // ── Clear ───────────────────────────────────────
 
   private handleClear(): void {
-    if (!this.grid || !this.materials || !this.challenge || this.resolved)
-      return;
-
-    // Return all grid items to materials
-    const gridState = this.grid.getGrid();
-    for (let r = 0; r < gridState.length; r++) {
-      for (let c = 0; c < gridState[r].length; c++) {
-        if (gridState[r][c]) {
-          this.materials.restore(gridState[r][c]!);
-        }
-      }
-    }
+    if (!this.grid || !this.challenge || this.resolved) return;
     this.grid.clear();
     this.selectedMaterial = null;
     this.setStatus("");
@@ -532,7 +489,7 @@ export class CaptchaWidget {
     if (this.timerEl) this.timerEl.style.width = "0%";
     this.setStatus("Challenge expired.", "error");
     this.resolved = true;
-    this.options.onExpire?.();
+    this.onExpire?.();
   }
 
   // ── Helpers ─────────────────────────────────────
@@ -545,36 +502,5 @@ export class CaptchaWidget {
     this.statusEl.textContent = text;
     this.statusEl.className = "mc-captcha__status";
     if (type) this.statusEl.classList.add(`mc-captcha__status--${type}`);
-  }
-
-  private addHiddenInput(): void {
-    // Find the parent form and add a hidden input for the token
-    const form = this.container.closest("form");
-    if (!form) return;
-
-    let input = form.querySelector(
-      'input[name="mc-captcha-token"]'
-    ) as HTMLInputElement;
-    if (!input) {
-      input = document.createElement("input");
-      input.type = "hidden";
-      input.name = "mc-captcha-token";
-      form.appendChild(input);
-    }
-  }
-
-  private setHiddenInput(token: string): void {
-    const form = this.container.closest("form");
-    if (!form) return;
-    const input = form.querySelector(
-      'input[name="mc-captcha-token"]'
-    ) as HTMLInputElement;
-    if (input) input.value = token;
-  }
-
-  private escapeHtml(str: string): string {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
   }
 }

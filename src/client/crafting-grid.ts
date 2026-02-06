@@ -1,5 +1,5 @@
-import type { CraftingGrid } from "../shared/types";
-import { getItemDisplay } from "../shared/items";
+import type { CraftingGrid } from "../shared/types.js";
+import { getItemDisplay } from "../shared/items.js";
 
 /**
  * Manages the 3x3 crafting grid.
@@ -11,7 +11,7 @@ export class CraftingGridComponent {
   private el: HTMLElement;
   private slots: HTMLElement[][] = [];
 
-  /** Called when an item is removed from a slot (returned to materials) */
+  /** Called when an item is removed from a slot */
   onItemRemoved: ((itemId: string, row: number, col: number) => void) | null =
     null;
 
@@ -103,7 +103,7 @@ export class CraftingGridComponent {
           `Grid slot row ${r + 1}, column ${c + 1}, empty`
         );
 
-        // Click to remove item (return it to materials)
+        // Click to remove item or activate for placement
         slot.addEventListener("click", () => {
           const item = this.grid[r][c];
           if (item) {

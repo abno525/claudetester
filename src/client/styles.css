@@ -1,17 +1,8 @@
-/**
- * Injects the widget CSS into the document head.
- * Uses a data-attribute to avoid injecting twice.
+/*
+ * Minecraft CAPTCHA — Widget Styles
+ * Pixel-art inspired styling for the crafting table CAPTCHA.
  */
-export function injectStyles(): void {
-  if (document.querySelector("style[data-mc-captcha]")) return;
 
-  const style = document.createElement("style");
-  style.setAttribute("data-mc-captcha", "");
-  style.textContent = CSS;
-  document.head.appendChild(style);
-}
-
-const CSS = `
 /* ── Container ──────────────────────────────────── */
 
 .mc-captcha {
@@ -209,22 +200,6 @@ const CSS = `
   outline-offset: -2px;
 }
 
-.mc-captcha__material.mc-disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.mc-captcha__material-count {
-  position: absolute;
-  bottom: 2px;
-  right: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  color: #ffffff;
-  text-shadow: 1px 1px 0 #333;
-  pointer-events: none;
-}
-
 /* ── Verify button ──────────────────────────────── */
 
 .mc-captcha__actions {
@@ -352,4 +327,3 @@ const CSS = `
     min-width: 280px;
   }
 }
-`;

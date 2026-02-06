@@ -11,6 +11,7 @@ export interface ItemDisplay {
  */
 export const ITEM_DISPLAY: Record<string, ItemDisplay> = {
   // Wood & building
+  oak_planks:     { color: "#b88a4a", icon: "\u25A3" },   // ▣
   plank:          { color: "#b88a4a", icon: "\u25A3" },   // ▣
   log:            { color: "#6b4226", icon: "\u25A3" },
   stick:          { color: "#7a5c2e", icon: "\u2502" },   // │
