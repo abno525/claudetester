@@ -45,8 +45,8 @@ Recipes are stored as JSON objects:
   "type": "shaped",
   "pattern": [
     ["plank", "plank", "plank"],
-    [null,    "stick", null],
-    [null,    "stick", null]
+    [null, "stick", null],
+    [null, "stick", null]
   ],
   "output": "wooden_pickaxe",
   "materials": ["plank", "stick"],
@@ -99,11 +99,11 @@ Top-left:        Top-right:       Bottom-left:     Bottom-right:
 
 ## Difficulty Levels
 
-| Level  | Description |
-|--------|-------------|
+| Level  | Description                                              |
+| ------ | -------------------------------------------------------- |
 | Easy   | Common recipes with few materials (2-3 items), no decoys |
-| Medium | Moderately known recipes, 1-2 decoy materials added |
-| Hard   | Obscure recipes, multiple decoys, shorter time limit |
+| Medium | Moderately known recipes, 1-2 decoy materials added      |
+| Hard   | Obscure recipes, multiple decoys, shorter time limit     |
 
 Difficulty can be configured per-integration to balance security and user experience.
 

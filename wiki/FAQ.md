@@ -42,6 +42,7 @@ Yes. Minecraft CAPTCHA is designed to be self-hostable. You run the backend on y
 ### How is the verification cookie secured?
 
 The cookie is:
+
 - **HttpOnly** — not accessible via JavaScript
 - **Secure** — only sent over HTTPS
 - **SameSite=Strict** — not sent with cross-site requests

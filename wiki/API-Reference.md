@@ -25,10 +25,10 @@ Create a new CAPTCHA challenge.
 }
 ```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `siteKey` | string | yes | Your public site key |
-| `difficulty` | string | no | `easy`, `medium`, or `hard`. Default: `medium` |
+| Field        | Type   | Required | Description                                    |
+| ------------ | ------ | -------- | ---------------------------------------------- |
+| `siteKey`    | string | yes      | Your public site key                           |
+| `difficulty` | string | no       | `easy`, `medium`, or `hard`. Default: `medium` |
 
 **Response (200):**
 
@@ -47,14 +47,14 @@ Create a new CAPTCHA challenge.
 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `challengeId` | string | Unique challenge identifier |
-| `targetItem` | string | Item ID the user must craft |
-| `targetItemLabel` | string | Human-readable item name |
-| `materials` | array | Available materials (includes decoys) |
-| `gridSize` | number | Grid dimension (always 3 for now) |
-| `expiresAt` | string | ISO 8601 expiration timestamp |
+| Field             | Type   | Description                           |
+| ----------------- | ------ | ------------------------------------- |
+| `challengeId`     | string | Unique challenge identifier           |
+| `targetItem`      | string | Item ID the user must craft           |
+| `targetItemLabel` | string | Human-readable item name              |
+| `materials`       | array  | Available materials (includes decoys) |
+| `gridSize`        | number | Grid dimension (always 3 for now)     |
+| `expiresAt`       | string | ISO 8601 expiration timestamp         |
 
 ---
 
@@ -69,18 +69,18 @@ Verify a user's crafting attempt.
   "challengeId": "ch_abc123def456",
   "grid": [
     ["plank", "plank", "plank"],
-    [null,    "stick", null],
-    [null,    "stick", null]
+    [null, "stick", null],
+    [null, "stick", null]
   ],
   "secret": "your-secret-key"
 }
 ```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `challengeId` | string | yes | The challenge ID from `/challenge` |
-| `grid` | array | yes | 3x3 array of item IDs or `null` for empty slots |
-| `secret` | string | yes | Your secret key (server-side only) |
+| Field         | Type   | Required | Description                                     |
+| ------------- | ------ | -------- | ----------------------------------------------- |
+| `challengeId` | string | yes      | The challenge ID from `/challenge`              |
+| `grid`        | array  | yes      | 3x3 array of item IDs or `null` for empty slots |
+| `secret`      | string | yes      | Your secret key (server-side only)              |
 
 **Response — Success (200):**
 
@@ -110,12 +110,12 @@ Verify a user's crafting attempt.
 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `success` | boolean | Whether the crafting was correct |
-| `token` | string | Verification token (only on success) |
-| `error` | string | Error code (only on failure) |
-| `retriesRemaining` | number | Attempts left before a new challenge is required |
+| Field              | Type    | Description                                      |
+| ------------------ | ------- | ------------------------------------------------ |
+| `success`          | boolean | Whether the crafting was correct                 |
+| `token`            | string  | Verification token (only on success)             |
+| `error`            | string  | Error code (only on failure)                     |
+| `retriesRemaining` | number  | Attempts left before a new challenge is required |
 
 ---
 
@@ -155,24 +155,24 @@ Validate a verification token server-side. Use this to confirm a user's token is
 
 ## Error Codes
 
-| Code | Description |
-|------|-------------|
-| `incorrect_recipe` | The submitted grid does not match the expected recipe |
-| `challenge_expired` | The challenge has timed out |
-| `challenge_not_found` | The challenge ID is invalid or already consumed |
-| `rate_limited` | Too many attempts; wait before retrying |
-| `invalid_site_key` | The provided site key is not recognized |
-| `invalid_secret` | The provided secret key is incorrect |
-| `token_expired` | The verification token has expired |
-| `token_invalid` | The verification token signature is invalid |
+| Code                  | Description                                           |
+| --------------------- | ----------------------------------------------------- |
+| `incorrect_recipe`    | The submitted grid does not match the expected recipe |
+| `challenge_expired`   | The challenge has timed out                           |
+| `challenge_not_found` | The challenge ID is invalid or already consumed       |
+| `rate_limited`        | Too many attempts; wait before retrying               |
+| `invalid_site_key`    | The provided site key is not recognized               |
+| `invalid_secret`      | The provided secret key is incorrect                  |
+| `token_expired`       | The verification token has expired                    |
+| `token_invalid`       | The verification token signature is invalid           |
 
 ## Rate Limits
 
-| Endpoint | Limit |
-|----------|-------|
-| `POST /challenge` | 10 requests per minute per IP |
-| `POST /verify` | 5 requests per minute per challenge |
-| `POST /validate-token` | 30 requests per minute per secret |
+| Endpoint               | Limit                               |
+| ---------------------- | ----------------------------------- |
+| `POST /challenge`      | 10 requests per minute per IP       |
+| `POST /verify`         | 5 requests per minute per challenge |
+| `POST /validate-token` | 30 requests per minute per secret   |
 
 When rate-limited, the API returns HTTP 429 with a `Retry-After` header.
 

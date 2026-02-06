@@ -21,7 +21,9 @@ Test coverage expanded from 2 files / 46 LOC to 5 files / 46 passing tests cover
 - `MinecraftCaptcha` — lifecycle, API communication, success/failure callbacks
 
 ### 3. Rewrite the README
+
 `main.md` is 7 lines and reads like a placeholder. A proper README should include:
+
 - Project description and a screenshot/gif of the captcha in action
 - Quick-start instructions (install, dev server, build)
 - Configuration options (env vars, endpoints)
@@ -29,20 +31,26 @@ Test coverage expanded from 2 files / 46 LOC to 5 files / 46 passing tests cover
 - License and contribution guidelines
 
 ### 4. Add linting and formatting
+
 No ESLint or Prettier configuration exists. Set up:
+
 - ESLint with recommended TypeScript rules
 - Prettier for consistent formatting
 - A `lint` npm script and pre-commit hook (e.g. via `lint-staged` + `husky`)
 
 ### 5. Add CI/CD pipeline
+
 No automated checks run on commits or pull requests. Set up GitHub Actions to:
+
 - Run `npm run typecheck`
 - Run `npm test`
 - Run `npm run build`
 - Optionally run `npm audit` for security scanning
 
 ### 6. Improve server-side input validation and error handling
+
 Current gaps:
+
 - No validation of grid dimensions (must be exactly 3x3) or item ID format
 - No request body size limits (potential DoS vector)
 - No rate limiting on `/api/captcha/verify` or `/api/captcha/challenge`

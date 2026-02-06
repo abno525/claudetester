@@ -41,7 +41,7 @@ export class MinecraftCaptcha {
     this.craftingTable = new CraftingTable(
       this.container,
       this.challenge,
-      (answer) => this.handleSubmit(answer)
+      (answer) => this.handleSubmit(answer),
     );
     this.craftingTable.render();
   }

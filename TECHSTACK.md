@@ -4,11 +4,11 @@
 
 Minecraft Captcha is split into two packages shipped from a single repository:
 
-| Layer | What ships | Key tech |
-|-------|-----------|----------|
-| **Widget** (`dist/widget/`) | A framework-agnostic JS bundle + CSS that any page can embed | TypeScript, Vite (library mode) |
-| **Server** (`dist/server/`) | A Node.js module that generates challenges and verifies answers | TypeScript, Express |
-| **Shared** (`src/shared/`) | Types and recipe data used by both sides (compiled into each bundle) | TypeScript |
+| Layer                       | What ships                                                           | Key tech                        |
+| --------------------------- | -------------------------------------------------------------------- | ------------------------------- |
+| **Widget** (`dist/widget/`) | A framework-agnostic JS bundle + CSS that any page can embed         | TypeScript, Vite (library mode) |
+| **Server** (`dist/server/`) | A Node.js module that generates challenges and verifies answers      | TypeScript, Express             |
+| **Shared** (`src/shared/`)  | Types and recipe data used by both sides (compiled into each bundle) | TypeScript                      |
 
 ---
 
@@ -21,6 +21,7 @@ Minecraft Captcha is split into two packages shipped from a single repository:
 ### Vite 6 (widget build)
 
 **Why:** Vite's library mode produces a single ES module **and** a UMD bundle from the same entry point. This means the widget can be consumed as:
+
 - `<script src="minecraft-captcha.umd.cjs">` (classic)
 - `import { MinecraftCaptcha } from "minecraft-captcha/widget"` (modern)
 
@@ -37,6 +38,7 @@ Vite also gives us instant HMR during development and handles CSS injection auto
 ### Node.js `crypto` (server — challenge tokens & cookie signing)
 
 **Why:** Built-in, zero-dependency, audited. Used for:
+
 - `crypto.randomUUID()` — generating challenge IDs
 - `crypto.createHmac("sha256", ...)` — signing captcha cookies so they can't be forged
 - `crypto.timingSafeEqual()` — constant-time comparison to prevent timing attacks on cookie verification
@@ -73,10 +75,10 @@ Vite also gives us instant HMR during development and handles CSS injection auto
 
 ## NPM Scripts
 
-| Script | Purpose |
-|--------|---------|
+| Script               | Purpose                                                        |
+| -------------------- | -------------------------------------------------------------- |
 | `npm run dev:widget` | Start Vite dev server with HMR (proxies `/api` to the backend) |
-| `npm run dev:server` | Start the Express server with hot-reload via `tsx watch` |
-| `npm run build` | Build both the widget bundle and the server |
-| `npm test` | Run all tests with Vitest |
-| `npm run typecheck` | Type-check the entire project without emitting |
+| `npm run dev:server` | Start the Express server with hot-reload via `tsx watch`       |
+| `npm run build`      | Build both the widget bundle and the server                    |
+| `npm test`           | Run all tests with Vitest                                      |
+| `npm run typecheck`  | Type-check the entire project without emitting                 |

@@ -20,6 +20,7 @@ Minecraft CAPTCHA is a client-server system with three main components:
 The browser-side component that renders the crafting table interface.
 
 **Responsibilities:**
+
 - Render the 3x3 crafting grid
 - Display available materials to the user
 - Handle drag-and-drop of items into grid slots
@@ -28,6 +29,7 @@ The browser-side component that renders the crafting table interface.
 - Display pass/fail feedback
 
 **Key design goals:**
+
 - Pixel-faithful Minecraft crafting table appearance
 - Responsive — works on desktop and mobile
 - Lightweight — minimal JavaScript bundle size
@@ -38,6 +40,7 @@ The browser-side component that renders the crafting table interface.
 The server-side component that validates crafting attempts and issues verification tokens.
 
 **Responsibilities:**
+
 - Generate CAPTCHA challenges (select a recipe + provide materials)
 - Validate submitted grid layouts against known recipes
 - Issue signed verification cookies on success
@@ -48,6 +51,7 @@ The server-side component that validates crafting attempts and issues verificati
 A data layer containing Minecraft crafting recipes.
 
 **Responsibilities:**
+
 - Store recipe definitions (grid patterns mapped to output items)
 - Provide recipe lookup for challenge generation
 - Support both shaped and shapeless recipes

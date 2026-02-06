@@ -17,16 +17,16 @@ The simplest way — no build tools required.
 
 <script>
   var captcha = new MinecraftCaptcha.MinecraftCaptcha({
-    element: document.getElementById('captcha'),
-    apiUrl: 'https://your-api.com',   // where the verification server runs
+    element: document.getElementById("captcha"),
+    apiUrl: "https://your-api.com", // where the verification server runs
     onSuccess: function (result) {
       // captcha solved — the server has set an httpOnly cookie
-      document.getElementById('my-form').submit();
+      document.getElementById("my-form").submit();
     },
     onFailure: function (result) {
-      alert('Wrong pattern, try again!');
+      alert("Wrong pattern, try again!");
       captcha.start(); // reload a new challenge
-    }
+    },
   });
 
   captcha.start();
@@ -46,13 +46,13 @@ npm install minecraft-captcha
 Import and use:
 
 ```ts
-import { MinecraftCaptcha } from 'minecraft-captcha/widget';
+import { MinecraftCaptcha } from "minecraft-captcha/widget";
 
 const captcha = new MinecraftCaptcha({
-  element: document.getElementById('captcha')!,
-  apiUrl: '/api',
-  onSuccess: (result) => console.log('Solved!', result),
-  onFailure: (result) => console.log('Failed', result),
+  element: document.getElementById("captcha")!,
+  apiUrl: "/api",
+  onSuccess: (result) => console.log("Solved!", result),
+  onFailure: (result) => console.log("Failed", result),
 });
 
 captcha.start();
@@ -61,8 +61,8 @@ captcha.start();
 ### React example
 
 ```tsx
-import { useEffect, useRef } from 'react';
-import { MinecraftCaptcha } from 'minecraft-captcha/widget';
+import { useEffect, useRef } from "react";
+import { MinecraftCaptcha } from "minecraft-captcha/widget";
 
 export function CaptchaWidget({ onVerified }: { onVerified: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -103,13 +103,13 @@ npx tsx src/server/index.ts
 ### Option B: Mount into an existing Express app
 
 ```ts
-import express from 'express';
-import { app as captchaApp } from 'minecraft-captcha/server';
+import express from "express";
+import { app as captchaApp } from "minecraft-captcha/server";
 
 const app = express();
 
 // Mount captcha routes under /captcha
-app.use('/captcha', captchaApp);
+app.use("/captcha", captchaApp);
 
 app.listen(8080);
 ```
@@ -117,23 +117,27 @@ app.listen(8080);
 ### Option C: Use the verification functions directly
 
 ```ts
-import { createChallenge } from 'minecraft-captcha/server';
-import { verifyAnswer, generateCookieValue, validateCookie } from 'minecraft-captcha/server';
+import { createChallenge } from "minecraft-captcha/server";
+import {
+  verifyAnswer,
+  generateCookieValue,
+  validateCookie,
+} from "minecraft-captcha/server";
 
 // In your own route handler:
-app.post('/my-captcha-check', (req, res) => {
+app.post("/my-captcha-check", (req, res) => {
   const result = verifyAnswer(req.body);
   if (result.success) {
-    res.cookie('mc_captcha', generateCookieValue(), { httpOnly: true });
+    res.cookie("mc_captcha", generateCookieValue(), { httpOnly: true });
   }
   res.json(result);
 });
 
 // In a middleware to protect a route:
-app.use('/protected', (req, res, next) => {
+app.use("/protected", (req, res, next) => {
   const token = req.cookies?.mc_captcha;
   if (!token || !validateCookie(token)) {
-    return res.status(403).json({ error: 'Captcha required' });
+    return res.status(403).json({ error: "Captcha required" });
   }
   next();
 });
@@ -145,14 +149,14 @@ app.use('/protected', (req, res, next) => {
 
 On successful verification, the server sets an `mc_captcha` httpOnly cookie:
 
-| Property | Value |
-|----------|-------|
-| Name | `mc_captcha` |
-| HttpOnly | `true` |
-| Secure | `true` in production |
-| SameSite | `strict` |
-| Max-Age | 1 hour |
-| Content | HMAC-signed timestamp |
+| Property | Value                 |
+| -------- | --------------------- |
+| Name     | `mc_captcha`          |
+| HttpOnly | `true`                |
+| Secure   | `true` in production  |
+| SameSite | `strict`              |
+| Max-Age  | 1 hour                |
+| Content  | HMAC-signed timestamp |
 
 Your backend middleware can validate this cookie using `validateCookie()` to decide whether the user has passed the captcha.
 
@@ -162,17 +166,17 @@ Your backend middleware can validate this cookie using `validateCookie()` to dec
 
 ### Widget options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `element` | `HTMLElement` | *required* | DOM node to mount the captcha into |
-| `apiUrl` | `string` | `""` (same origin) | Base URL of the verification server |
-| `onSuccess` | `(result) => void` | — | Callback on successful verification |
-| `onFailure` | `(result) => void` | — | Callback on failed verification |
+| Option      | Type               | Default            | Description                         |
+| ----------- | ------------------ | ------------------ | ----------------------------------- |
+| `element`   | `HTMLElement`      | _required_         | DOM node to mount the captcha into  |
+| `apiUrl`    | `string`           | `""` (same origin) | Base URL of the verification server |
+| `onSuccess` | `(result) => void` | —                  | Callback on successful verification |
+| `onFailure` | `(result) => void` | —                  | Callback on failed verification     |
 
 ### Server environment variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3000` | HTTP port for the standalone server |
-| `CAPTCHA_SECRET` | random | HMAC secret for cookie signing |
-| `NODE_ENV` | — | Set to `production` to enable secure cookies |
+| Variable         | Default | Description                                  |
+| ---------------- | ------- | -------------------------------------------- |
+| `PORT`           | `3000`  | HTTP port for the standalone server          |
+| `CAPTCHA_SECRET` | random  | HMAC secret for cookie signing               |
+| `NODE_ENV`       | —       | Set to `production` to enable secure cookies |
