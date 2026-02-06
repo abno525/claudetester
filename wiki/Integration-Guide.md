@@ -36,17 +36,17 @@ Place a container element where you want the CAPTCHA to appear:
 ```html
 <script>
   MinecraftCaptcha.init({
-    container: '#mc-captcha',
-    siteKey: 'your-site-key',
-    difficulty: 'medium',  // optional: easy | medium | hard
-    theme: 'classic',      // optional: classic | dark
-    onSuccess: function(token) {
+    container: "#mc-captcha",
+    siteKey: "your-site-key",
+    difficulty: "medium", // optional: easy | medium | hard
+    theme: "classic", // optional: classic | dark
+    onSuccess: function (token) {
       // token is automatically added to the form as a hidden field
-      console.log('CAPTCHA passed');
+      console.log("CAPTCHA passed");
     },
-    onFailure: function() {
-      console.log('CAPTCHA failed, user can retry');
-    }
+    onFailure: function () {
+      console.log("CAPTCHA failed, user can retry");
+    },
   });
 </script>
 ```
@@ -57,13 +57,13 @@ On your backend, verify the token included in the form submission:
 
 ```javascript
 // Node.js example
-const response = await fetch('https://your-captcha-server.com/api/verify', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("https://your-captcha-server.com/api/verify", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    token: req.body['mc-captcha-token'],
-    secret: process.env.CAPTCHA_SECRET_KEY
-  })
+    token: req.body["mc-captcha-token"],
+    secret: process.env.CAPTCHA_SECRET_KEY,
+  }),
 });
 
 const result = await response.json();
@@ -82,29 +82,29 @@ Use the REST API directly if you need full control over the UI. See the [API Ref
 
 ```javascript
 // 1. Request a challenge
-const challenge = await fetch('/api/challenge', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ difficulty: 'medium' })
-}).then(r => r.json());
+const challenge = await fetch("/api/challenge", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ difficulty: "medium" }),
+}).then((r) => r.json());
 
 // challenge = { challengeId, targetItem, materials, expiresAt }
 
 // 2. Build your own UI and collect the user's grid layout
 
 // 3. Submit for verification
-const result = await fetch('/api/verify', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const result = await fetch("/api/verify", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     challengeId: challenge.challengeId,
     grid: [
-      ['plank', 'plank', 'plank'],
-      [null,    'stick', null],
-      [null,    'stick', null]
-    ]
-  })
-}).then(r => r.json());
+      ["plank", "plank", "plank"],
+      [null, "stick", null],
+      [null, "stick", null],
+    ],
+  }),
+}).then((r) => r.json());
 
 // result = { success: true, token: '...' }
 ```
@@ -124,34 +124,34 @@ As an alternative to token-based verification, Minecraft CAPTCHA can set a signe
 
 ```javascript
 function requireCaptcha(req, res, next) {
-  const cookie = req.cookies['mc_captcha_verified'];
+  const cookie = req.cookies["mc_captcha_verified"];
   if (!cookie) {
-    return res.redirect('/captcha');
+    return res.redirect("/captcha");
   }
 
   const isValid = verifyCookieSignature(cookie, process.env.CAPTCHA_SECRET_KEY);
   if (!isValid) {
-    return res.redirect('/captcha');
+    return res.redirect("/captcha");
   }
 
   next();
 }
 
-app.get('/protected-page', requireCaptcha, (req, res) => {
-  res.render('protected');
+app.get("/protected-page", requireCaptcha, (req, res) => {
+  res.render("protected");
 });
 ```
 
 ## Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `container` | string | required | CSS selector for the CAPTCHA container |
-| `siteKey` | string | required | Your public site key |
-| `difficulty` | string | `'medium'` | Challenge difficulty: `easy`, `medium`, `hard` |
-| `theme` | string | `'classic'` | Visual theme: `classic`, `dark` |
-| `locale` | string | `'en'` | Language for UI text |
-| `timeout` | number | `300` | Challenge timeout in seconds |
-| `onSuccess` | function | — | Callback on successful verification |
-| `onFailure` | function | — | Callback on failed attempt |
-| `onExpire` | function | — | Callback when challenge times out |
+| Option       | Type     | Default     | Description                                    |
+| ------------ | -------- | ----------- | ---------------------------------------------- |
+| `container`  | string   | required    | CSS selector for the CAPTCHA container         |
+| `siteKey`    | string   | required    | Your public site key                           |
+| `difficulty` | string   | `'medium'`  | Challenge difficulty: `easy`, `medium`, `hard` |
+| `theme`      | string   | `'classic'` | Visual theme: `classic`, `dark`                |
+| `locale`     | string   | `'en'`      | Language for UI text                           |
+| `timeout`    | number   | `300`       | Challenge timeout in seconds                   |
+| `onSuccess`  | function | —           | Callback on successful verification            |
+| `onFailure`  | function | —           | Callback on failed attempt                     |
+| `onExpire`   | function | —           | Callback when challenge times out              |

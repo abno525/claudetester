@@ -14,14 +14,14 @@ Minecraft CAPTCHA is a human verification system that replaces traditional CAPTC
 
 ## Wiki Pages
 
-| Page | Description |
-|------|-------------|
-| [Getting Started](Getting-Started.md) | Setup, prerequisites, and first run |
-| [Architecture](Architecture.md) | System design, component overview, and data flow |
-| [Crafting System](Crafting-System.md) | How crafting verification works under the hood |
-| [Integration Guide](Integration-Guide.md) | Embedding Minecraft CAPTCHA into your application |
-| [API Reference](API-Reference.md) | Endpoints, request/response formats, and error codes |
-| [FAQ](FAQ.md) | Common questions and troubleshooting |
+| Page                                      | Description                                          |
+| ----------------------------------------- | ---------------------------------------------------- |
+| [Getting Started](Getting-Started.md)     | Setup, prerequisites, and first run                  |
+| [Architecture](Architecture.md)           | System design, component overview, and data flow     |
+| [Crafting System](Crafting-System.md)     | How crafting verification works under the hood       |
+| [Integration Guide](Integration-Guide.md) | Embedding Minecraft CAPTCHA into your application    |
+| [API Reference](API-Reference.md)         | Endpoints, request/response formats, and error codes |
+| [FAQ](FAQ.md)                             | Common questions and troubleshooting                 |
 
 ## Project Status
 

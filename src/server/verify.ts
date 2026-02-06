@@ -1,10 +1,15 @@
 import crypto from "node:crypto";
-import type { CaptchaAnswer, CaptchaResult, CraftingGrid } from "../shared/types.js";
+import type {
+  CaptchaAnswer,
+  CaptchaResult,
+  CraftingGrid,
+} from "../shared/types.js";
 import { RECIPES } from "../shared/recipes.js";
 import { consumeChallenge } from "./challenge.js";
 
 /** Secret used to sign captcha cookies. Override via CAPTCHA_SECRET env var. */
-const SECRET = process.env.CAPTCHA_SECRET ?? crypto.randomBytes(32).toString("hex");
+const SECRET =
+  process.env.CAPTCHA_SECRET ?? crypto.randomBytes(32).toString("hex");
 
 /** Cookie name for the captcha token */
 export const COOKIE_NAME = "mc_captcha";

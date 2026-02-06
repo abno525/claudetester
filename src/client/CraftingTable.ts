@@ -18,7 +18,7 @@ export class CraftingTable {
   constructor(
     container: HTMLElement,
     challenge: CaptchaChallenge,
-    onSubmit: (answer: CaptchaAnswer) => void
+    onSubmit: (answer: CaptchaAnswer) => void,
   ) {
     this.container = container;
     this.challenge = challenge;
