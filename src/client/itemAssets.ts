@@ -14,7 +14,7 @@ export interface ItemVisual {
 
 const ITEM_VISUALS: Record<string, ItemVisual> = {
   oak_planks: { icon: "🪵", bg: "#b5884e", label: "Oak Planks" },
-  stick: { icon: "🥢", bg: "#8b6914", label: "Stick" },
+  stick: { icon: "╱", bg: "#8b6914", label: "Stick" },
   coal: { icon: "⬛", bg: "#2a2a2a", label: "Coal" },
   cobblestone: { icon: "🪨", bg: "#7a7a7a", label: "Cobblestone" },
   iron_ingot: { icon: "⬜", bg: "#d4d4d4", label: "Iron Ingot" },
@@ -22,6 +22,9 @@ const ITEM_VISUALS: Record<string, ItemVisual> = {
   diamond: { icon: "💎", bg: "#5ee8e4", label: "Diamond" },
   redstone: { icon: "🔴", bg: "#c41a1a", label: "Redstone" },
   string: { icon: "🧵", bg: "#e0e0e0", label: "String" },
+  stone: { icon: "🧱", bg: "#8a8a8a", label: "Stone" },
+  book: { icon: "📖", bg: "#8b6914", label: "Book" },
+  apple: { icon: "🍎", bg: "#d43030", label: "Apple" },
   leather: { icon: "🟫", bg: "#8b5a2b", label: "Leather" },
   wooden_pickaxe: { icon: "⛏️", bg: "#b5884e", label: "Wooden Pickaxe" },
   wooden_sword: { icon: "🗡️", bg: "#b5884e", label: "Wooden Sword" },
@@ -30,6 +33,16 @@ const ITEM_VISUALS: Record<string, ItemVisual> = {
   torch: { icon: "🔥", bg: "#ffa500", label: "Torch" },
   chest: { icon: "📦", bg: "#b5884e", label: "Chest" },
   furnace: { icon: "🔲", bg: "#7a7a7a", label: "Furnace" },
+  iron_pickaxe: { icon: "⛏️", bg: "#d4d4d4", label: "Iron Pickaxe" },
+  diamond_sword: { icon: "🗡️", bg: "#5ee8e4", label: "Diamond Sword" },
+  bow: { icon: "🏹", bg: "#8b6914", label: "Bow" },
+  fishing_rod: { icon: "🎣", bg: "#8b6914", label: "Fishing Rod" },
+  bookshelf: { icon: "📚", bg: "#8b6914", label: "Bookshelf" },
+  iron_helmet: { icon: "⛑️", bg: "#d4d4d4", label: "Iron Helmet" },
+  ladder: { icon: "🪜", bg: "#8b6914", label: "Ladder" },
+  stone_stairs: { icon: "🪨", bg: "#8a8a8a", label: "Stone Stairs" },
+  piston: { icon: "🔧", bg: "#7a7a7a", label: "Piston" },
+  golden_apple: { icon: "🍏", bg: "#ffd700", label: "Golden Apple" },
 };
 
 /** Default visual for unknown items */
