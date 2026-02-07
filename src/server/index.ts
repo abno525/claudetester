@@ -192,7 +192,7 @@ const widgetPath = path.resolve(__dirname, "../widget");
 app.use(express.static(widgetPath));
 
 // SPA catch-all: serve index.html for any non-API GET request
-app.get("*", (_req, res) => {
+app.get("/{*splat}", (_req, res) => {
   res.sendFile(path.join(widgetPath, "index.html"));
 });
 
