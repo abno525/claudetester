@@ -144,8 +144,7 @@ src/
 ## Documentation
 
 - **[Integration Guide](INTEGRATION.md)** -- embed the widget via script tag, ES module, or React; mount the server standalone or into an existing Express app
-- **[Tech Stack](TECHSTACK.md)** -- technology choices and rationale (TypeScript, Vite, Express, Vitest)
-- **[Wiki](https://github.com/abno525/claudetester/wiki)** -- architecture, crafting system details, API reference, Docker deployment, FAQ, and more
+- **[Wiki](https://github.com/abno525/claudetester/wiki)** -- architecture, tech stack, crafting system, API reference, deployment, FAQ, and more
 
 ## License
 
