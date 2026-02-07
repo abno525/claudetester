@@ -1,3 +1,5 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import type { Server } from "node:http";
 import { createChallenge } from "./challenge.js";
@@ -171,6 +173,20 @@ app.use(
     res.status(500).json({ success: false, message: "Internal server error" });
   },
 );
+
+// ---------------------------------------------------------------------------
+// Static file serving (production)
+// ---------------------------------------------------------------------------
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const widgetPath = path.resolve(__dirname, "../widget");
+
+app.use(express.static(widgetPath));
+
+// SPA catch-all: serve index.html for any non-API GET request
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(widgetPath, "index.html"));
+});
 
 // ---------------------------------------------------------------------------
 // Start & graceful shutdown

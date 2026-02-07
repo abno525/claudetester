@@ -2,7 +2,13 @@
 
 A human-verification widget that replaces traditional CAPTCHAs with an interactive Minecraft crafting table. Users prove they're human by dragging items into a 3x3 grid to craft a target item.
 
-![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/node-%E2%89%A518-brightgreen.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![Express](https://img.shields.io/badge/Express-5-lightgrey.svg)](https://expressjs.com/)
+
+<!-- TODO: Add a screenshot or gif of the captcha in action -->
+<!-- ![Minecraft CAPTCHA demo](docs/demo.gif) -->
 
 ## How It Works
 
@@ -20,8 +26,8 @@ A human-verification widget that replaces traditional CAPTCHAs with an interacti
 ### Install and run
 
 ```bash
-git clone https://github.com/<your-org>/minecraft-captcha.git
-cd minecraft-captcha
+git clone https://github.com/abno525/claudetester.git
+cd claudetester
 npm install
 
 # Start the API server (port 3000)
@@ -42,36 +48,40 @@ npm run preview        # preview the built widget
 
 ## NPM Scripts
 
-| Script | Description |
-|---|---|
-| `npm run dev:widget` | Vite dev server with HMR |
+| Script               | Description                            |
+| -------------------- | -------------------------------------- |
+| `npm run dev:widget` | Vite dev server with HMR               |
 | `npm run dev:server` | Express server with hot-reload via tsx |
-| `npm run build` | Build widget (ES + UMD) and server |
-| `npm run preview` | Preview built widget |
-| `npm run typecheck` | Run TypeScript type checking |
-| `npm test` | Run tests (Vitest) |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run lint` | Lint with ESLint |
-| `npm run format` | Format with Prettier |
+| `npm run build`      | Build widget (ES + UMD) and server     |
+| `npm run preview`    | Preview built widget                   |
+| `npm run typecheck`  | Run TypeScript type checking           |
+| `npm test`           | Run tests (Vitest)                     |
+| `npm run test:watch` | Run tests in watch mode                |
+| `npm run lint`       | Lint with ESLint                       |
+| `npm run format`     | Format with Prettier                   |
 
 ## Configuration
 
 ### Server environment variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `3000` | Port the Express server listens on |
+| Variable         | Default              | Description                                                                                  |
+| ---------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| `PORT`           | `3000`               | Port the Express server listens on                                                           |
 | `CAPTCHA_SECRET` | Random (per restart) | HMAC key for signing cookies. **Set this in production** to persist cookies across restarts. |
-| `NODE_ENV` | `development` | Set to `production` to enable secure cookies |
+| `NODE_ENV`       | `development`        | Set to `production` to enable secure cookies                                                 |
 
 ### Widget options
 
 ```ts
 new MinecraftCaptcha({
-  element: document.getElementById('captcha'),  // container element
-  apiUrl: 'https://your-api.com',               // server base URL
-  onSuccess: (result) => { /* passed */ },       // success callback
-  onFailure: (result) => { /* failed */ },       // failure callback
+  element: document.getElementById("captcha"), // container element
+  apiUrl: "https://your-api.com", // server base URL
+  onSuccess: (result) => {
+    /* passed */
+  }, // success callback
+  onFailure: (result) => {
+    /* failed */
+  }, // failure callback
 });
 ```
 
@@ -79,17 +89,22 @@ new MinecraftCaptcha({
 
 ```
 src/
-├── client/          # Embeddable widget (vanilla TypeScript)
-│   ├── index.ts     # MinecraftCaptcha class
-│   ├── CraftingTable.ts   # 3x3 grid UI with drag-and-drop
-│   └── styles.css   # Minecraft-themed styling
-├── server/          # Express API
-│   ├── index.ts     # Routes and app setup
-│   ├── challenge.ts # Challenge generation (5-min TTL)
-│   └── verify.ts    # Grid verification and cookie signing
-└── shared/          # Code shared between client and server
-    ├── types.ts     # TypeScript interfaces
-    └── recipes.ts   # Crafting recipe database
+├── client/                      # Embeddable widget (vanilla TypeScript)
+│   ├── index.ts                 # MinecraftCaptcha class entry point
+│   ├── CraftingTable.ts         # 3x3 grid UI with drag-and-drop
+│   ├── CraftingTable.test.ts    # CraftingTable tests
+│   ├── MinecraftCaptcha.test.ts # Widget integration tests
+│   └── styles.css               # Minecraft-themed styling
+├── server/                      # Express API
+│   ├── index.ts                 # Routes and app setup
+│   ├── challenge.ts             # Challenge generation (5-min TTL)
+│   ├── challenge.test.ts        # Challenge tests
+│   ├── verify.ts                # Grid verification and cookie signing
+│   └── verify.test.ts           # Verification tests
+└── shared/                      # Code shared between client and server
+    ├── types.ts                 # TypeScript interfaces
+    ├── recipes.ts               # Crafting recipe database
+    └── recipes.test.ts          # Recipe tests
 ```
 
 ## Documentation
@@ -97,6 +112,13 @@ src/
 - **[Integration Guide](INTEGRATION.md)** -- embed the widget via script tag, ES module, or React; mount the server standalone or into an existing Express app
 - **[Tech Stack](TECHSTACK.md)** -- technology choices and rationale (TypeScript, Vite, Express, Vitest)
 - **[Wiki](wiki/)** -- architecture, crafting system details, API reference, FAQ, and more
+  - [Home](wiki/Home.md)
+  - [Getting Started](wiki/Getting-Started.md)
+  - [Architecture](wiki/Architecture.md)
+  - [Crafting System](wiki/Crafting-System.md)
+  - [API Reference](wiki/API-Reference.md)
+  - [Integration Guide](wiki/Integration-Guide.md)
+  - [FAQ](wiki/FAQ.md)
 
 ## License
 

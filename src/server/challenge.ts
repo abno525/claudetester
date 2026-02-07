@@ -45,7 +45,7 @@ export function consumeChallenge(challengeId: string): string | null {
   return entry.recipeId;
 }
 
-/** Pick 2-3 random item ids that are NOT in the required set. */
+/** Pick 3-5 random item ids that are NOT in the required set. */
 function getDistractorItems(needed: Set<ItemId>): ItemId[] {
   const all = new Set<ItemId>();
   for (const r of RECIPES) {
@@ -56,7 +56,7 @@ function getDistractorItems(needed: Set<ItemId>): ItemId[] {
     }
   }
   const pool = [...all];
-  const count = Math.min(pool.length, 2 + Math.floor(Math.random() * 2));
+  const count = Math.min(pool.length, 3 + Math.floor(Math.random() * 3));
   return shuffle(pool).slice(0, count);
 }
 
