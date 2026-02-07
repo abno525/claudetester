@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createChallenge, consumeChallenge } from "./challenge.js";
 import { RECIPES } from "../shared/recipes.js";
 
@@ -66,7 +66,9 @@ describe("createChallenge", () => {
         }
       }
 
-      const extras = challenge.availableItems.filter((i) => !neededItems.has(i));
+      const extras = challenge.availableItems.filter(
+        (i) => !neededItems.has(i),
+      );
       if (extras.length > 0) {
         hasDistractors = true;
         // Verify distractors are valid item IDs from other recipes
