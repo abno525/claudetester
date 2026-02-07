@@ -5,6 +5,7 @@ import type { Server } from "node:http";
 import { createChallenge } from "./challenge.js";
 import {
   verifyAnswer,
+  validateToken,
   generateToken,
   getPublicKeyJwk,
   initKeys,
@@ -162,6 +163,21 @@ app.post("/api/captcha/verify", rateLimit, async (req, res) => {
 /** Serve the public key in JWK format for external JWT verification. */
 app.get("/api/captcha/public-key", (_req, res) => {
   res.json(getPublicKeyJwk());
+});
+
+/**
+ * Validate the mc_captcha cookie. Designed for nginx auth_request:
+ * returns 200 if the cookie contains a valid JWT, 401 otherwise.
+ */
+app.get("/api/captcha/validate", async (req, res) => {
+  const raw = req.headers.cookie ?? "";
+  const match = raw.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
+  const token = match?.[1];
+  if (!token || !(await validateToken(token))) {
+    res.status(401).json({ valid: false });
+    return;
+  }
+  res.json({ valid: true });
 });
 
 // ---------------------------------------------------------------------------
