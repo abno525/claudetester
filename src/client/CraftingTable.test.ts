@@ -12,6 +12,21 @@ function makeChallenge(): CaptchaChallenge {
   };
 }
 
+function mockDropEvent(itemId: string): Event {
+  const e = new Event("drop", { bubbles: true });
+  e.preventDefault = vi.fn();
+  Object.defineProperty(e, "dataTransfer", {
+    value: { getData: () => itemId },
+  });
+  return e;
+}
+
+function mockDragoverEvent(): Event {
+  const e = new Event("dragover", { bubbles: true });
+  e.preventDefault = vi.fn();
+  return e;
+}
+
 describe("CraftingTable", () => {
   let container: HTMLElement;
   let challenge: CaptchaChallenge;
@@ -68,7 +83,7 @@ describe("CraftingTable", () => {
       expect(trayItems.length).toBe(challenge.availableItems.length);
 
       const itemIds = Array.from(trayItems).map(
-        (el) => (el as HTMLElement).dataset.item
+        (el) => (el as HTMLElement).dataset.item,
       );
       for (const item of challenge.availableItems) {
         expect(itemIds).toContain(item);
@@ -130,13 +145,12 @@ describe("CraftingTable", () => {
       const table = new CraftingTable(container, challenge, onSubmit);
       table.render();
 
-      const slot = container.querySelector('.mc-slot[data-row="0"][data-col="0"]') as HTMLElement;
+      const slot = container.querySelector(
+        '.mc-slot[data-row="0"][data-col="0"]',
+      ) as HTMLElement;
 
       // Simulate drop first by dispatching a drop event
-      const dropEvent = new Event("drop", { bubbles: true }) as any;
-      dropEvent.preventDefault = vi.fn();
-      dropEvent.dataTransfer = { getData: () => "oak_planks" };
-      slot.dispatchEvent(dropEvent);
+      slot.dispatchEvent(mockDropEvent("oak_planks"));
 
       expect(slot.textContent).toBe("oak planks");
       expect(slot.classList.contains("mc-slot--filled")).toBe(true);
@@ -153,11 +167,11 @@ describe("CraftingTable", () => {
       const table = new CraftingTable(container, challenge, onSubmit);
       table.render();
 
-      const slot = container.querySelector('.mc-slot[data-row="1"][data-col="1"]') as HTMLElement;
+      const slot = container.querySelector(
+        '.mc-slot[data-row="1"][data-col="1"]',
+      ) as HTMLElement;
 
-      const dragoverEvent = new Event("dragover", { bubbles: true }) as any;
-      dragoverEvent.preventDefault = vi.fn();
-      slot.dispatchEvent(dragoverEvent);
+      slot.dispatchEvent(mockDragoverEvent());
       expect(slot.classList.contains("mc-slot--hover")).toBe(true);
 
       slot.dispatchEvent(new Event("dragleave"));
@@ -168,12 +182,11 @@ describe("CraftingTable", () => {
       const table = new CraftingTable(container, challenge, onSubmit);
       table.render();
 
-      const slot = container.querySelector('.mc-slot[data-row="0"][data-col="1"]') as HTMLElement;
+      const slot = container.querySelector(
+        '.mc-slot[data-row="0"][data-col="1"]',
+      ) as HTMLElement;
 
-      const dropEvent = new Event("drop", { bubbles: true }) as any;
-      dropEvent.preventDefault = vi.fn();
-      dropEvent.dataTransfer = { getData: () => "stick" };
-      slot.dispatchEvent(dropEvent);
+      slot.dispatchEvent(mockDropEvent("stick"));
 
       expect(slot.textContent).toBe("stick");
       expect(slot.classList.contains("mc-slot--filled")).toBe(true);

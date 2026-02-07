@@ -111,7 +111,10 @@ app.post("/api/captcha/verify", rateLimit, (req, res) => {
     return;
   }
 
-  if (typeof answer.challengeId !== "string" || answer.challengeId.length > 64) {
+  if (
+    typeof answer.challengeId !== "string" ||
+    answer.challengeId.length > 64
+  ) {
     res.status(400).json({ success: false, message: "Invalid challengeId" });
     return;
   }
@@ -119,7 +122,10 @@ app.post("/api/captcha/verify", rateLimit, (req, res) => {
   if (!isValidGrid(answer.grid)) {
     res
       .status(400)
-      .json({ success: false, message: "Grid must be a 3x3 array of valid item IDs or null" });
+      .json({
+        success: false,
+        message: "Grid must be a 3x3 array of valid item IDs or null",
+      });
     return;
   }
 
@@ -142,8 +148,6 @@ app.post("/api/captcha/verify", rateLimit, (req, res) => {
 // Start & graceful shutdown
 // ---------------------------------------------------------------------------
 
-let server: Server;
-
 function shutdown(signal: string) {
   console.log(`\nReceived ${signal}. Shutting down gracefully…`);
   server.close(() => {
@@ -152,7 +156,7 @@ function shutdown(signal: string) {
   });
 }
 
-server = app.listen(PORT, () => {
+const server: Server = app.listen(PORT, () => {
   console.log(`Minecraft Captcha server running on http://localhost:${PORT}`);
 });
 
