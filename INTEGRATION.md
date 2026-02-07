@@ -86,7 +86,35 @@ export function CaptchaWidget({ onVerified }: { onVerified: () => void }) {
 
 ---
 
-## 3. Server-Side Setup
+## 3. Standalone Deployment
+
+The Express server can serve the built frontend widget directly, so a single process handles both the API and the UI.
+
+### Production
+
+```bash
+# Build everything and start the server
+npm start
+
+# Or equivalently:
+npm run build
+node dist/server/index.js
+```
+
+The server will serve the widget on the root URL and the API on `/api`. Visit `http://localhost:3000` to see the captcha.
+
+### Development
+
+```bash
+# Start both Vite dev server and Express in watch mode
+npm run dev
+```
+
+This uses `concurrently` to run the Vite dev server (port 5173) and the Express server (port 3000) side-by-side. The Vite dev server proxies `/api` requests to Express automatically.
+
+---
+
+## 4. Server-Side Setup
 
 The verification server is a standalone Express app. Run it alongside your existing backend or embed the routes into your own Express app.
 
@@ -160,7 +188,7 @@ app.use("/protected", async (req, res, next) => {
 
 ---
 
-## 4. Cookie Behavior
+## 5. Cookie Behavior
 
 On successful verification, the server sets an `mc_captcha` httpOnly cookie containing a signed JWT:
 

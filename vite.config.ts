@@ -19,6 +19,8 @@ export default defineConfig({
   root: ".",
   publicDir: "public",
   server: {
+    // Dev-only: proxy API requests to the Express server running on port 3000.
+    // In production the Express server serves both the API and the built widget.
     proxy: {
       "/api": "http://localhost:3000",
     },
