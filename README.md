@@ -143,8 +143,7 @@ src/
 
 ## Documentation
 
-- **[Integration Guide](INTEGRATION.md)** -- embed the widget via script tag, ES module, or React; mount the server standalone or into an existing Express app
-- **[Wiki](https://github.com/abno525/claudetester/wiki)** -- architecture, tech stack, crafting system, API reference, deployment, FAQ, and more
+- **[Wiki](https://github.com/abno525/claudetester/wiki)** -- integration guide, architecture, tech stack, crafting system, API reference, deployment, FAQ, and more
 
 ## License
 
