@@ -14,7 +14,7 @@ A human-verification widget that replaces traditional CAPTCHAs with an interacti
 
 1. The server issues a **time-limited challenge** -- a target item plus a set of materials (with a few distractors mixed in).
 2. The user **drags and drops** materials onto a 3x3 crafting grid to match the recipe.
-3. The server **verifies** the grid layout and, on success, sets an HMAC-signed `mc_captcha` cookie.
+3. The server **verifies** the grid layout and, on success, sets a signed JWT (ES256) `mc_captcha` cookie.
 
 ## Quick Start
 
@@ -64,11 +64,12 @@ npm run preview        # preview the built widget
 
 ### Server environment variables
 
-| Variable         | Default              | Description                                                                                  |
-| ---------------- | -------------------- | -------------------------------------------------------------------------------------------- |
-| `PORT`           | `3000`               | Port the Express server listens on                                                           |
-| `CAPTCHA_SECRET` | Random (per restart) | HMAC key for signing cookies. **Set this in production** to persist cookies across restarts. |
-| `NODE_ENV`       | `development`        | Set to `production` to enable secure cookies                                                 |
+| Variable                   | Default | Description                                                  |
+| -------------------------- | ------- | ------------------------------------------------------------ |
+| `PORT`                     | `3000`  | Port the Express server listens on (validated: 0-65535)      |
+| `CAPTCHA_PRIVATE_KEY_PATH` | --      | Path to ES256 private key PEM file (required in production)  |
+| `CAPTCHA_PUBLIC_KEY_PATH`  | --      | Path to ES256 public key PEM file (required in production)   |
+| `NODE_ENV`                 | --      | Set to `production` to enable secure cookies and require keys |
 
 ### Widget options
 
@@ -111,14 +112,7 @@ src/
 
 - **[Integration Guide](INTEGRATION.md)** -- embed the widget via script tag, ES module, or React; mount the server standalone or into an existing Express app
 - **[Tech Stack](TECHSTACK.md)** -- technology choices and rationale (TypeScript, Vite, Express, Vitest)
-- **[Wiki](wiki/)** -- architecture, crafting system details, API reference, FAQ, and more
-  - [Home](wiki/Home.md)
-  - [Getting Started](wiki/Getting-Started.md)
-  - [Architecture](wiki/Architecture.md)
-  - [Crafting System](wiki/Crafting-System.md)
-  - [API Reference](wiki/API-Reference.md)
-  - [Integration Guide](wiki/Integration-Guide.md)
-  - [FAQ](wiki/FAQ.md)
+- **[Wiki](https://github.com/abno525/claudetester/wiki)** -- architecture, crafting system details, API reference, Docker deployment, FAQ, and more
 
 ## License
 
