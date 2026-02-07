@@ -3,6 +3,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CraftingTable } from "./CraftingTable.js";
 import type { CaptchaChallenge, CaptchaAnswer } from "../shared/types.js";
 
+function createMockDropEvent(itemId: string): Event {
+  const event = new Event("drop", { bubbles: true });
+  event.preventDefault = vi.fn();
+  Object.defineProperty(event, "dataTransfer", {
+    value: { getData: () => itemId },
+  });
+  return event;
+}
+
+function createMockDragoverEvent(): Event {
+  const event = new Event("dragover", { bubbles: true });
+  event.preventDefault = vi.fn();
+  return event;
+}
+
 function makeChallenge(): CaptchaChallenge {
   return {
     challengeId: "test-challenge-123",
@@ -68,22 +83,27 @@ describe("CraftingTable", () => {
       expect(trayItems.length).toBe(challenge.availableItems.length);
 
       const itemIds = Array.from(trayItems).map(
-        (el) => (el as HTMLElement).dataset.item
+        (el) => (el as HTMLElement).dataset.item,
       );
       for (const item of challenge.availableItems) {
         expect(itemIds).toContain(item);
       }
     });
 
-    it("renders draggable items with display-friendly text", () => {
+    it("renders draggable items with sprite icons", () => {
       const table = new CraftingTable(container, challenge, onSubmit);
       table.render();
       const items = container.querySelectorAll(".mc-item");
       for (const item of items) {
         const el = item as HTMLElement;
         expect(el.draggable).toBe(true);
-        // underscores replaced with spaces
-        expect(el.textContent).not.toContain("_");
+        expect(el.dataset.item).toBeDefined();
+        // Should contain an icon span instead of plain text
+        const icon = el.querySelector(".mc-item-icon") as HTMLElement;
+        expect(icon).not.toBeNull();
+        // Icon should have a tooltip with display name (no underscores)
+        expect(icon.title).not.toContain("_");
+        expect(icon.title.length).toBeGreaterThan(0);
       }
     });
 
@@ -130,20 +150,21 @@ describe("CraftingTable", () => {
       const table = new CraftingTable(container, challenge, onSubmit);
       table.render();
 
-      const slot = container.querySelector('.mc-slot[data-row="0"][data-col="0"]') as HTMLElement;
+      const slot = container.querySelector(
+        '.mc-slot[data-row="0"][data-col="0"]',
+      ) as HTMLElement;
 
       // Simulate drop first by dispatching a drop event
-      const dropEvent = new Event("drop", { bubbles: true }) as any;
-      dropEvent.preventDefault = vi.fn();
-      dropEvent.dataTransfer = { getData: () => "oak_planks" };
-      slot.dispatchEvent(dropEvent);
+      slot.dispatchEvent(createMockDropEvent("oak_planks"));
 
-      expect(slot.textContent).toBe("oak planks");
+      // Should contain an icon element after drop
+      const icon = slot.querySelector(".mc-item-icon");
+      expect(icon).not.toBeNull();
       expect(slot.classList.contains("mc-slot--filled")).toBe(true);
 
       // Click to clear
       slot.click();
-      expect(slot.textContent).toBe("");
+      expect(slot.innerHTML).toBe("");
       expect(slot.classList.contains("mc-slot--filled")).toBe(false);
     });
   });
@@ -153,29 +174,31 @@ describe("CraftingTable", () => {
       const table = new CraftingTable(container, challenge, onSubmit);
       table.render();
 
-      const slot = container.querySelector('.mc-slot[data-row="1"][data-col="1"]') as HTMLElement;
+      const slot = container.querySelector(
+        '.mc-slot[data-row="1"][data-col="1"]',
+      ) as HTMLElement;
 
-      const dragoverEvent = new Event("dragover", { bubbles: true }) as any;
-      dragoverEvent.preventDefault = vi.fn();
-      slot.dispatchEvent(dragoverEvent);
+      slot.dispatchEvent(createMockDragoverEvent());
       expect(slot.classList.contains("mc-slot--hover")).toBe(true);
 
       slot.dispatchEvent(new Event("dragleave"));
       expect(slot.classList.contains("mc-slot--hover")).toBe(false);
     });
 
-    it("places an item in the grid on drop and updates the slot text", () => {
+    it("places an item in the grid on drop and renders an icon", () => {
       const table = new CraftingTable(container, challenge, onSubmit);
       table.render();
 
-      const slot = container.querySelector('.mc-slot[data-row="0"][data-col="1"]') as HTMLElement;
+      const slot = container.querySelector(
+        '.mc-slot[data-row="0"][data-col="1"]',
+      ) as HTMLElement;
 
-      const dropEvent = new Event("drop", { bubbles: true }) as any;
-      dropEvent.preventDefault = vi.fn();
-      dropEvent.dataTransfer = { getData: () => "stick" };
-      slot.dispatchEvent(dropEvent);
+      slot.dispatchEvent(createMockDropEvent("stick"));
 
-      expect(slot.textContent).toBe("stick");
+      // Should render an icon element
+      const icon = slot.querySelector(".mc-item-icon") as HTMLElement;
+      expect(icon).not.toBeNull();
+      expect(icon.title).toBe("Stick");
       expect(slot.classList.contains("mc-slot--filled")).toBe(true);
       expect(slot.classList.contains("mc-slot--hover")).toBe(false);
 

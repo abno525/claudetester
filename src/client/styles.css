@@ -81,15 +81,49 @@
   border: 2px solid #373737;
   border-top-color: #aaa;
   border-left-color: #aaa;
-  padding: 6px 10px;
+  padding: 4px;
   font-size: 11px;
   color: #fff;
   cursor: grab;
   text-shadow: 1px 1px 0 #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mc-item:active {
   cursor: grabbing;
+}
+
+.mc-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 22px;
+  line-height: 1;
+  border-radius: 2px;
+  image-rendering: pixelated;
+  position: relative;
+}
+
+.mc-item-icon[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  border: 1px solid #5555ff;
+  font-family: "Courier New", monospace;
 }
 
 .mc-craft-btn {
