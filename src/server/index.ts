@@ -69,7 +69,17 @@ function rateLimit(
 
   bucket.count++;
 
+  // Attach standard rate-limit headers to every response
+  res.setHeader("X-RateLimit-Limit", String(RATE_MAX_REQUESTS));
+  res.setHeader(
+    "X-RateLimit-Remaining",
+    String(Math.max(0, RATE_MAX_REQUESTS - bucket.count)),
+  );
+  res.setHeader("X-RateLimit-Reset", String(Math.ceil(bucket.resetAt / 1000)));
+
   if (bucket.count > RATE_MAX_REQUESTS) {
+    const retryAfterSec = Math.ceil((bucket.resetAt - now) / 1000);
+    res.setHeader("Retry-After", String(retryAfterSec));
     res.status(429).json({ success: false, message: "Too many requests" });
     return;
   }
@@ -81,6 +91,8 @@ function rateLimit(
 // Validation helpers
 // ---------------------------------------------------------------------------
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const ITEM_ID_RE = /^[a-z][a-z0-9_]{0,63}$/;
 
 function isValidGrid(grid: unknown): grid is CraftingGrid {
@@ -113,15 +125,19 @@ app.post("/api/captcha/verify", rateLimit, (req, res) => {
     return;
   }
 
-  if (typeof answer.challengeId !== "string" || answer.challengeId.length > 64) {
+  if (
+    typeof answer.challengeId !== "string" ||
+    !UUID_RE.test(answer.challengeId)
+  ) {
     res.status(400).json({ success: false, message: "Invalid challengeId" });
     return;
   }
 
   if (!isValidGrid(answer.grid)) {
-    res
-      .status(400)
-      .json({ success: false, message: "Grid must be a 3x3 array of valid item IDs or null" });
+    res.status(400).json({
+      success: false,
+      message: "Grid must be a 3x3 array of valid item IDs or null",
+    });
     return;
   }
 
@@ -141,6 +157,24 @@ app.post("/api/captcha/verify", rateLimit, (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Global error handler (must be registered after all routes)
+// ---------------------------------------------------------------------------
+
+// Express error handlers must declare 4 parameters to be recognized as such.
+app.use(
+  (
+    err: Error,
+    _req: express.Request,
+    res: express.Response,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _next: express.NextFunction,
+  ) => {
+    console.error("Unhandled error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  },
+);
+
+// ---------------------------------------------------------------------------
 // Static file serving (production)
 // ---------------------------------------------------------------------------
 
@@ -158,7 +192,9 @@ app.get("*", (_req, res) => {
 // Start & graceful shutdown
 // ---------------------------------------------------------------------------
 
-let server: Server;
+const server: Server = app.listen(PORT, () => {
+  console.log(`Minecraft Captcha server running on http://localhost:${PORT}`);
+});
 
 function shutdown(signal: string) {
   console.log(`\nReceived ${signal}. Shutting down gracefully…`);
@@ -167,10 +203,6 @@ function shutdown(signal: string) {
     process.exit(0);
   });
 }
-
-server = app.listen(PORT, () => {
-  console.log(`Minecraft Captcha server running on http://localhost:${PORT}`);
-});
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
