@@ -103,9 +103,23 @@ export async function generateToken(): Promise<string> {
     .sign(privateKey);
 }
 
+/**
+ * RFC 7515 §3.1 — A JWS Compact Serialization consists of exactly three
+ * base64url-encoded segments separated by two period ('.') characters:
+ *   BASE64URL(header) '.' BASE64URL(payload) '.' BASE64URL(signature)
+ */
+const BASE64URL_RE = /^[A-Za-z0-9_-]+$/;
+
+function isJWSCompact(token: string): boolean {
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+  return parts.every((p) => p.length > 0 && BASE64URL_RE.test(p));
+}
+
 /** Validate a previously-issued captcha JWT. Returns true if valid. */
 export async function validateToken(token: string): Promise<boolean> {
   try {
+    if (!isJWSCompact(token)) return false;
     await jwtVerify(token, publicKey, {
       issuer: "minecraft-captcha",
       algorithms: [ALG],

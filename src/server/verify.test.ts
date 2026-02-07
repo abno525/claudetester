@@ -91,6 +91,55 @@ describe("JWT captcha token", () => {
     expect(COOKIE_NAME).toBe("mc_captcha");
     expect(COOKIE_MAX_AGE).toBe(3600);
   });
+
+  describe("RFC 7515 JWS Compact Serialization", () => {
+    it("generates tokens with three base64url segments", async () => {
+      const token = await generateToken();
+      const parts = token.split(".");
+      expect(parts).toHaveLength(3);
+      const base64urlRe = /^[A-Za-z0-9_-]+$/;
+      for (const part of parts) {
+        expect(part.length).toBeGreaterThan(0);
+        expect(base64urlRe.test(part)).toBe(true);
+      }
+    });
+
+    it("header segment decodes to valid JSON with alg", async () => {
+      const token = await generateToken();
+      const header = JSON.parse(
+        Buffer.from(token.split(".")[0], "base64url").toString(),
+      );
+      expect(header.alg).toBe("ES256");
+    });
+
+    it("payload segment decodes to valid JSON with required claims", async () => {
+      const token = await generateToken();
+      const payload = JSON.parse(
+        Buffer.from(token.split(".")[1], "base64url").toString(),
+      );
+      expect(payload).toHaveProperty("iss", "minecraft-captcha");
+      expect(payload).toHaveProperty("iat");
+      expect(payload).toHaveProperty("exp");
+      expect(payload).toHaveProperty("jti");
+    });
+
+    it("rejects tokens with wrong number of segments", async () => {
+      expect(await validateToken("one.two")).toBe(false);
+      expect(await validateToken("one.two.three.four")).toBe(false);
+      expect(await validateToken("single")).toBe(false);
+    });
+
+    it("rejects tokens with non-base64url characters", async () => {
+      expect(await validateToken("abc.d e f.ghi")).toBe(false);
+      expect(await validateToken("abc.def.gh+i")).toBe(false);
+    });
+
+    it("rejects tokens with empty segments", async () => {
+      expect(await validateToken(".payload.sig")).toBe(false);
+      expect(await validateToken("header..sig")).toBe(false);
+      expect(await validateToken("header.payload.")).toBe(false);
+    });
+  });
 });
 
 describe("verifyAnswer", () => {
