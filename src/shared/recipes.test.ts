@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { RECIPES } from "./recipes.js";
 
 describe("recipes", () => {
-  it("should have at least one recipe", () => {
-    expect(RECIPES.length).toBeGreaterThan(0);
+  it("should have at least 15 recipes", () => {
+    expect(RECIPES.length).toBeGreaterThanOrEqual(15);
   });
 
   it("every recipe has a 3x3 pattern", () => {

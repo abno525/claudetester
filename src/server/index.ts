@@ -1,9 +1,13 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import type { Server } from "node:http";
 import { createChallenge } from "./challenge.js";
 import {
   verifyAnswer,
-  generateCookieValue,
+  generateToken,
+  getPublicKeyJwk,
+  initKeys,
   COOKIE_NAME,
   COOKIE_MAX_AGE,
 } from "./verify.js";
@@ -67,7 +71,17 @@ function rateLimit(
 
   bucket.count++;
 
+  // Attach standard rate-limit headers to every response
+  res.setHeader("X-RateLimit-Limit", String(RATE_MAX_REQUESTS));
+  res.setHeader(
+    "X-RateLimit-Remaining",
+    String(Math.max(0, RATE_MAX_REQUESTS - bucket.count)),
+  );
+  res.setHeader("X-RateLimit-Reset", String(Math.ceil(bucket.resetAt / 1000)));
+
   if (bucket.count > RATE_MAX_REQUESTS) {
+    const retryAfterSec = Math.ceil((bucket.resetAt - now) / 1000);
+    res.setHeader("Retry-After", String(retryAfterSec));
     res.status(429).json({ success: false, message: "Too many requests" });
     return;
   }
@@ -79,6 +93,8 @@ function rateLimit(
 // Validation helpers
 // ---------------------------------------------------------------------------
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const ITEM_ID_RE = /^[a-z][a-z0-9_]{0,63}$/;
 
 function isValidGrid(grid: unknown): grid is CraftingGrid {
@@ -104,7 +120,7 @@ app.post("/api/captcha/challenge", rateLimit, (_req, res) => {
 });
 
 /** Verify the user's crafting answer */
-app.post("/api/captcha/verify", rateLimit, (req, res) => {
+app.post("/api/captcha/verify", rateLimit, async (req, res) => {
   const answer = req.body as CaptchaAnswer;
   if (!answer?.challengeId || !answer?.grid) {
     res.status(400).json({ success: false, message: "Invalid request body" });
@@ -113,26 +129,25 @@ app.post("/api/captcha/verify", rateLimit, (req, res) => {
 
   if (
     typeof answer.challengeId !== "string" ||
-    answer.challengeId.length > 64
+    !UUID_RE.test(answer.challengeId)
   ) {
     res.status(400).json({ success: false, message: "Invalid challengeId" });
     return;
   }
 
   if (!isValidGrid(answer.grid)) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "Grid must be a 3x3 array of valid item IDs or null",
-      });
+    res.status(400).json({
+      success: false,
+      message: "Grid must be a 3x3 array of valid item IDs or null",
+    });
     return;
   }
 
   const result = verifyAnswer(answer);
 
   if (result.success) {
-    res.cookie(COOKIE_NAME, generateCookieValue(), {
+    const token = await generateToken();
+    res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
@@ -144,9 +159,48 @@ app.post("/api/captcha/verify", rateLimit, (req, res) => {
   res.json(result);
 });
 
+/** Serve the public key in JWK format for external JWT verification. */
+app.get("/api/captcha/public-key", (_req, res) => {
+  res.json(getPublicKeyJwk());
+});
+
+// ---------------------------------------------------------------------------
+// Global error handler (must be registered after all routes)
+// ---------------------------------------------------------------------------
+
+// Express error handlers must declare 4 parameters to be recognized as such.
+app.use(
+  (
+    err: Error,
+    _req: express.Request,
+    res: express.Response,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _next: express.NextFunction,
+  ) => {
+    console.error("Unhandled error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Static file serving (production)
+// ---------------------------------------------------------------------------
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const widgetPath = path.resolve(__dirname, "../widget");
+
+app.use(express.static(widgetPath));
+
+// SPA catch-all: serve index.html for any non-API GET request
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(widgetPath, "index.html"));
+});
+
 // ---------------------------------------------------------------------------
 // Start & graceful shutdown
 // ---------------------------------------------------------------------------
+
+let server: Server;
 
 function shutdown(signal: string) {
   console.log(`\nReceived ${signal}. Shutting down gracefully…`);
@@ -156,11 +210,16 @@ function shutdown(signal: string) {
   });
 }
 
-const server: Server = app.listen(PORT, () => {
-  console.log(`Minecraft Captcha server running on http://localhost:${PORT}`);
-});
+async function start() {
+  await initKeys();
+  server = app.listen(PORT, () => {
+    console.log(`Minecraft Captcha server running on http://localhost:${PORT}`);
+  });
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+}
+
+start();
 
 export { app };

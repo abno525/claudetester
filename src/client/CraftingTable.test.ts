@@ -3,6 +3,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CraftingTable } from "./CraftingTable.js";
 import type { CaptchaChallenge, CaptchaAnswer } from "../shared/types.js";
 
+function createMockDropEvent(itemId: string): Event {
+  const event = new Event("drop", { bubbles: true });
+  event.preventDefault = vi.fn();
+  Object.defineProperty(event, "dataTransfer", {
+    value: { getData: () => itemId },
+  });
+  return event;
+}
+
+function createMockDragoverEvent(): Event {
+  const event = new Event("dragover", { bubbles: true });
+  event.preventDefault = vi.fn();
+  return event;
+}
+
 function makeChallenge(): CaptchaChallenge {
   return {
     challengeId: "test-challenge-123",
@@ -10,21 +25,6 @@ function makeChallenge(): CaptchaChallenge {
     availableItems: ["oak_planks", "stick", "cobblestone"],
     expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
   };
-}
-
-function mockDropEvent(itemId: string): Event {
-  const e = new Event("drop", { bubbles: true });
-  e.preventDefault = vi.fn();
-  Object.defineProperty(e, "dataTransfer", {
-    value: { getData: () => itemId },
-  });
-  return e;
-}
-
-function mockDragoverEvent(): Event {
-  const e = new Event("dragover", { bubbles: true });
-  e.preventDefault = vi.fn();
-  return e;
 }
 
 describe("CraftingTable", () => {
@@ -90,15 +90,20 @@ describe("CraftingTable", () => {
       }
     });
 
-    it("renders draggable items with display-friendly text", () => {
+    it("renders draggable items with sprite icons", () => {
       const table = new CraftingTable(container, challenge, onSubmit);
       table.render();
       const items = container.querySelectorAll(".mc-item");
       for (const item of items) {
         const el = item as HTMLElement;
         expect(el.draggable).toBe(true);
-        // underscores replaced with spaces
-        expect(el.textContent).not.toContain("_");
+        expect(el.dataset.item).toBeDefined();
+        // Should contain an icon span instead of plain text
+        const icon = el.querySelector(".mc-item-icon") as HTMLElement;
+        expect(icon).not.toBeNull();
+        // Icon should have a tooltip with display name (no underscores)
+        expect(icon.title).not.toContain("_");
+        expect(icon.title.length).toBeGreaterThan(0);
       }
     });
 
@@ -150,14 +155,16 @@ describe("CraftingTable", () => {
       ) as HTMLElement;
 
       // Simulate drop first by dispatching a drop event
-      slot.dispatchEvent(mockDropEvent("oak_planks"));
+      slot.dispatchEvent(createMockDropEvent("oak_planks"));
 
-      expect(slot.textContent).toBe("oak planks");
+      // Should contain an icon element after drop
+      const icon = slot.querySelector(".mc-item-icon");
+      expect(icon).not.toBeNull();
       expect(slot.classList.contains("mc-slot--filled")).toBe(true);
 
       // Click to clear
       slot.click();
-      expect(slot.textContent).toBe("");
+      expect(slot.innerHTML).toBe("");
       expect(slot.classList.contains("mc-slot--filled")).toBe(false);
     });
   });
@@ -171,14 +178,14 @@ describe("CraftingTable", () => {
         '.mc-slot[data-row="1"][data-col="1"]',
       ) as HTMLElement;
 
-      slot.dispatchEvent(mockDragoverEvent());
+      slot.dispatchEvent(createMockDragoverEvent());
       expect(slot.classList.contains("mc-slot--hover")).toBe(true);
 
       slot.dispatchEvent(new Event("dragleave"));
       expect(slot.classList.contains("mc-slot--hover")).toBe(false);
     });
 
-    it("places an item in the grid on drop and updates the slot text", () => {
+    it("places an item in the grid on drop and renders an icon", () => {
       const table = new CraftingTable(container, challenge, onSubmit);
       table.render();
 
@@ -186,9 +193,12 @@ describe("CraftingTable", () => {
         '.mc-slot[data-row="0"][data-col="1"]',
       ) as HTMLElement;
 
-      slot.dispatchEvent(mockDropEvent("stick"));
+      slot.dispatchEvent(createMockDropEvent("stick"));
 
-      expect(slot.textContent).toBe("stick");
+      // Should render an icon element
+      const icon = slot.querySelector(".mc-item-icon") as HTMLElement;
+      expect(icon).not.toBeNull();
+      expect(icon.title).toBe("Stick");
       expect(slot.classList.contains("mc-slot--filled")).toBe(true);
       expect(slot.classList.contains("mc-slot--hover")).toBe(false);
 
