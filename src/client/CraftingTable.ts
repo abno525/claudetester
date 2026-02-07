@@ -4,6 +4,7 @@ import type {
   CraftingGrid,
   ItemId,
 } from "../shared/types.js";
+import { createItemIcon } from "./itemAssets.js";
 
 /**
  * Renders a 3x3 Minecraft crafting grid with drag-and-drop item placement.
@@ -84,7 +85,7 @@ export class CraftingTable {
     el.className = "mc-item";
     el.draggable = true;
     el.dataset.item = itemId;
-    el.textContent = itemId.replace(/_/g, " ");
+    el.appendChild(createItemIcon(itemId));
     el.addEventListener("dragstart", (e) => {
       e.dataTransfer?.setData("text/plain", itemId);
     });
@@ -104,13 +105,16 @@ export class CraftingTable {
       slot.classList.remove("mc-slot--hover");
       const itemId = e.dataTransfer?.getData("text/plain") ?? null;
       this.grid[row][col] = itemId;
-      slot.textContent = itemId ? itemId.replace(/_/g, " ") : "";
+      slot.innerHTML = "";
+      if (itemId) {
+        slot.appendChild(createItemIcon(itemId));
+      }
       slot.classList.toggle("mc-slot--filled", itemId !== null);
     });
     // Click to clear
     slot.addEventListener("click", () => {
       this.grid[row][col] = null;
-      slot.textContent = "";
+      slot.innerHTML = "";
       slot.classList.remove("mc-slot--filled");
     });
   }
