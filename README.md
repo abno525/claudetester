@@ -23,28 +23,61 @@ A human-verification widget that replaces traditional CAPTCHAs with an interacti
 - Node.js >= 18
 - npm >= 9
 
-### Install and run
+### Install and run (development)
 
 ```bash
 git clone https://github.com/abno525/claudetester.git
 cd claudetester
 npm install
 
-# Start the API server (port 3000)
-npm run dev:server
-
-# In another terminal -- start the widget dev server (port 5173)
-npm run dev:widget
+# Start both widget dev server and API server together
+npm run dev
 ```
 
-Open `http://localhost:5173` to see the captcha in action.
+Open `http://localhost:5173` to see the captcha in action. The Vite dev server proxies API requests to Express on port 3000.
 
-### Build for production
+### Manual Deployment (without Docker)
+
+**Requirements:** Node.js >= 18, npm >= 9
+
+1. **Generate an ES256 key pair** (if you don't have one):
 
 ```bash
-npm run build          # builds both widget and server
-npm run preview        # preview the built widget
+openssl ecparam -name prime256v1 -genkey -noout -out ec-private.pem
+openssl ec -in ec-private.pem -pubout -out ec-public.pem
 ```
+
+2. **Install, build, and start:**
+
+```bash
+git clone https://github.com/abno525/claudetester.git
+cd claudetester
+npm install
+npm run build
+```
+
+3. **Set environment variables and launch:**
+
+```bash
+export NODE_ENV=production
+export PORT=3000
+export CAPTCHA_PRIVATE_KEY_PATH="./ec-private.pem"
+export CAPTCHA_PUBLIC_KEY_PATH="./ec-public.pem"
+
+node dist/server/index.js
+```
+
+The server will serve both the API (`/api/captcha/*`) and the built widget UI on `http://localhost:3000`.
+
+> In development (without key files), omit the key paths and the server will generate an ephemeral key pair automatically. Tokens will not survive restarts.
+
+### Docker Deployment
+
+```bash
+docker compose up --build
+```
+
+See the [Docker Deployment](https://github.com/abno525/claudetester/wiki/Docker-Deployment) wiki page for production configuration with persistent keys.
 
 ## NPM Scripts
 
@@ -64,11 +97,11 @@ npm run preview        # preview the built widget
 
 ### Server environment variables
 
-| Variable                   | Default | Description                                                  |
-| -------------------------- | ------- | ------------------------------------------------------------ |
-| `PORT`                     | `3000`  | Port the Express server listens on (validated: 0-65535)      |
-| `CAPTCHA_PRIVATE_KEY_PATH` | --      | Path to ES256 private key PEM file (required in production)  |
-| `CAPTCHA_PUBLIC_KEY_PATH`  | --      | Path to ES256 public key PEM file (required in production)   |
+| Variable                   | Default | Description                                                   |
+| -------------------------- | ------- | ------------------------------------------------------------- |
+| `PORT`                     | `3000`  | Port the Express server listens on (validated: 0-65535)       |
+| `CAPTCHA_PRIVATE_KEY_PATH` | --      | Path to ES256 private key PEM file (required in production)   |
+| `CAPTCHA_PUBLIC_KEY_PATH`  | --      | Path to ES256 public key PEM file (required in production)    |
 | `NODE_ENV`                 | --      | Set to `production` to enable secure cookies and require keys |
 
 ### Widget options
