@@ -145,7 +145,7 @@ describe("verifyAnswer", () => {
       // We can't control which recipe is selected, so we create many challenges
       // and find one matching this recipe
       let found = false;
-      for (let attempt = 0; attempt < 200; attempt++) {
+      for (let attempt = 0; attempt < 500; attempt++) {
         const challenge = createChallenge();
         const recipeName = challenge.prompt.replace("Craft: ", "");
         if (recipeName === recipe.resultName) {
@@ -160,7 +160,7 @@ describe("verifyAnswer", () => {
         // Consume unused challenges to not leak memory
         // (they expire naturally, but clean up)
       }
-      // With 8 recipes and 200 attempts, probability of missing one is negligible
+      // With 18 recipes and 500 attempts, probability of missing one is negligible
       expect(found).toBe(true);
     }
   });
