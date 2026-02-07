@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.github
+.husky
+worktrees
+wiki
+*.md
+.env
+*.tsbuildinfo
+.prettierrc
+.prettierignore
+eslint.config.js
