@@ -1,4 +1,14 @@
 import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import {
+  SignJWT,
+  jwtVerify,
+  generateKeyPair,
+  exportJWK,
+  importPKCS8,
+  importSPKI,
+} from "jose";
+import type { JWK } from "jose";
 import type {
   CaptchaAnswer,
   CaptchaResult,
@@ -7,30 +17,61 @@ import type {
 import { RECIPES } from "../shared/recipes.js";
 import { consumeChallenge } from "./challenge.js";
 
-/** Secret used to sign captcha cookies. Override via CAPTCHA_SECRET env var. */
-const SECRET =
-  process.env.CAPTCHA_SECRET ?? crypto.randomBytes(32).toString("hex");
-
-if (!process.env.CAPTCHA_SECRET) {
-  if (process.env.NODE_ENV === "production") {
-    console.error(
-      "CAPTCHA_SECRET is not set. In production this means cookies will be " +
-        "invalidated on every server restart. Set CAPTCHA_SECRET to a stable value.",
-    );
-    process.exit(1);
-  } else {
-    console.warn(
-      "CAPTCHA_SECRET is not set — using a random value. " +
-        "Cookies will not survive server restarts.",
-    );
-  }
-}
-
 /** Cookie name for the captcha token */
 export const COOKIE_NAME = "mc_captcha";
 
 /** Cookie max-age in seconds (1 hour) */
 export const COOKIE_MAX_AGE = 60 * 60;
+
+const ALG = "ES256";
+
+let privateKey: CryptoKey;
+let publicKey: CryptoKey;
+let publicJwk: JWK;
+
+/**
+ * Initialize the signing key pair.
+ *
+ * Loads from PEM files if CAPTCHA_PRIVATE_KEY_PATH and CAPTCHA_PUBLIC_KEY_PATH
+ * are set. Otherwise generates an ephemeral in-memory key pair (suitable for
+ * development only).
+ */
+export async function initKeys(): Promise<void> {
+  const privPath = process.env.CAPTCHA_PRIVATE_KEY_PATH;
+  const pubPath = process.env.CAPTCHA_PUBLIC_KEY_PATH;
+
+  if (privPath && pubPath) {
+    const [privPem, pubPem] = await Promise.all([
+      fs.readFile(privPath, "utf-8"),
+      fs.readFile(pubPath, "utf-8"),
+    ]);
+    privateKey = await importPKCS8(privPem.trim(), ALG);
+    publicKey = await importSPKI(pubPem.trim(), ALG);
+  } else {
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "CAPTCHA_PRIVATE_KEY_PATH and CAPTCHA_PUBLIC_KEY_PATH are not set. " +
+          "In production you must provide persistent key files.",
+      );
+      process.exit(1);
+    }
+    console.warn(
+      "No key paths configured — generating ephemeral ES256 key pair. " +
+        "Tokens will not survive server restarts.",
+    );
+    const pair = await generateKeyPair(ALG);
+    privateKey = pair.privateKey;
+    publicKey = pair.publicKey;
+  }
+
+  publicJwk = await exportJWK(publicKey);
+  publicJwk.alg = ALG;
+}
+
+/** Return the public key as a JWK (for the /api/captcha/public-key endpoint). */
+export function getPublicKeyJwk(): JWK {
+  return publicJwk;
+}
 
 /** Verify a submitted answer against the expected recipe. */
 export function verifyAnswer(answer: CaptchaAnswer): CaptchaResult {
@@ -51,34 +92,28 @@ export function verifyAnswer(answer: CaptchaAnswer): CaptchaResult {
   return { success: true, message: "Captcha solved!" };
 }
 
-/** Generate a signed cookie value proving the captcha was solved. */
-export function generateCookieValue(): string {
-  const timestamp = Date.now().toString(36);
-  const signature = crypto
-    .createHmac("sha256", SECRET)
-    .update(timestamp)
-    .digest("hex")
-    .slice(0, 16);
-  return `${timestamp}.${signature}`;
+/** Generate a signed JWT proving the captcha was solved. */
+export async function generateToken(): Promise<string> {
+  return new SignJWT({})
+    .setProtectedHeader({ alg: ALG })
+    .setIssuedAt()
+    .setExpirationTime(`${COOKIE_MAX_AGE}s`)
+    .setJti(crypto.randomUUID())
+    .setIssuer("minecraft-captcha")
+    .sign(privateKey);
 }
 
-/** Validate a previously-issued captcha cookie. */
-export function validateCookie(value: string): boolean {
-  const [timestamp, signature] = value.split(".");
-  if (!timestamp || !signature) return false;
-
-  const expected = crypto
-    .createHmac("sha256", SECRET)
-    .update(timestamp)
-    .digest("hex")
-    .slice(0, 16);
-
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+/** Validate a previously-issued captcha JWT. Returns true if valid. */
+export async function validateToken(token: string): Promise<boolean> {
+  try {
+    await jwtVerify(token, publicKey, {
+      issuer: "minecraft-captcha",
+      algorithms: [ALG],
+    });
+    return true;
+  } catch {
     return false;
   }
-
-  const issued = parseInt(timestamp, 36);
-  return Date.now() - issued < COOKIE_MAX_AGE * 1000;
 }
 
 function gridsMatch(submitted: CraftingGrid, expected: CraftingGrid): boolean {
