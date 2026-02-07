@@ -3,7 +3,9 @@ import type { Server } from "node:http";
 import { createChallenge } from "./challenge.js";
 import {
   verifyAnswer,
-  generateCookieValue,
+  generateToken,
+  getPublicKeyJwk,
+  initKeys,
   COOKIE_NAME,
   COOKIE_MAX_AGE,
 } from "./verify.js";
@@ -104,29 +106,34 @@ app.post("/api/captcha/challenge", rateLimit, (_req, res) => {
 });
 
 /** Verify the user's crafting answer */
-app.post("/api/captcha/verify", rateLimit, (req, res) => {
+app.post("/api/captcha/verify", rateLimit, async (req, res) => {
   const answer = req.body as CaptchaAnswer;
   if (!answer?.challengeId || !answer?.grid) {
     res.status(400).json({ success: false, message: "Invalid request body" });
     return;
   }
 
-  if (typeof answer.challengeId !== "string" || answer.challengeId.length > 64) {
+  if (
+    typeof answer.challengeId !== "string" ||
+    answer.challengeId.length > 64
+  ) {
     res.status(400).json({ success: false, message: "Invalid challengeId" });
     return;
   }
 
   if (!isValidGrid(answer.grid)) {
-    res
-      .status(400)
-      .json({ success: false, message: "Grid must be a 3x3 array of valid item IDs or null" });
+    res.status(400).json({
+      success: false,
+      message: "Grid must be a 3x3 array of valid item IDs or null",
+    });
     return;
   }
 
   const result = verifyAnswer(answer);
 
   if (result.success) {
-    res.cookie(COOKIE_NAME, generateCookieValue(), {
+    const token = await generateToken();
+    res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
@@ -136,6 +143,11 @@ app.post("/api/captcha/verify", rateLimit, (req, res) => {
   }
 
   res.json(result);
+});
+
+/** Serve the public key in JWK format for external JWT verification. */
+app.get("/api/captcha/public-key", (_req, res) => {
+  res.json(getPublicKeyJwk());
 });
 
 // ---------------------------------------------------------------------------
@@ -152,11 +164,16 @@ function shutdown(signal: string) {
   });
 }
 
-server = app.listen(PORT, () => {
-  console.log(`Minecraft Captcha server running on http://localhost:${PORT}`);
-});
+async function start() {
+  await initKeys();
+  server = app.listen(PORT, () => {
+    console.log(`Minecraft Captcha server running on http://localhost:${PORT}`);
+  });
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+}
+
+start();
 
 export { app };
